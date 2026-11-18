@@ -32,8 +32,8 @@ const InteractiveModel = dynamic(() => import("./InteractiveModel"), { ssr: fals
 /* Each name renders as its own masked line: per-char spans keep the
    magnetic repulsion alive while the line-level span is what the
    opposing entrance + scroll-out parallax translate. */
-const FIRST_NAME = ["J", "o", "n", "a", "t", "h", "a", "n"];
-const LAST_NAME = ["J", "e", "s", "n", "i"];
+const FIRST_NAME = ["T", "a", "l", "h", "a"];
+const LAST_NAME = ["S", "h", "e", "i", "k", "h"];
 
 interface HeroSectionProps {
   animate?: boolean;
@@ -258,7 +258,7 @@ export default function HeroSection({
 
   /* ── Initial hidden state for entrance animation ──
      The name lines hide by offset inside their overflow-hidden masks
-     (no opacity): Jonathan waits below its mask, Jesni above its own,
+     (no opacity): Talha waits below its mask, Sheikh above its own,
      so the entrance is a pure opposing mask-reveal. */
   useGSAP(() => {
     try {
@@ -305,7 +305,7 @@ export default function HeroSection({
     try {
       mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        /* Opposing mask-reveal: Jonathan rises UP into view while Jesni
+        /* Opposing mask-reveal: Talha rises UP into view while Sheikh
            drops DOWN, simultaneously. Once the lines have landed, the
            masks release (overflow: visible) so the magnetic char
            repulsion and the scroll-out fly-apart are never clipped. */
@@ -503,11 +503,11 @@ export default function HeroSection({
             <div className="hero-text-col" style={{ pointerEvents: "auto" }}>
               {/* Stacked, masked name: each line lives in an
                   overflow-hidden wrapper so the opposing entrance
-                  (Jonathan up / Jesni down) reveals through a clean
+                  (Talha up / Sheikh down) reveals through a clean
                   mask. The masks release after the intro lands. */}
               <h1
                 className="hero-name-split"
-                aria-label="Jonathan Jesni"
+                aria-label="Talha Sheikh"
                 style={{ flexDirection: "column" }}
               >
                 <div className="hero-name-mask" style={{ overflow: "hidden" }}>
@@ -550,11 +550,11 @@ export default function HeroSection({
 
               <div ref={subContentRef} className="hero-sub-content">
                 <h2 className="hero-tagline">
-                  I engineer <TerminalHighlight delay={1.1} color="#C9A852" animate={animate}>self-modifying models</TerminalHighlight>, <TerminalHighlight delay={1.35} color="#C9A852" animate={animate}>computer vision pipelines</TerminalHighlight>, and <TerminalHighlight delay={1.6} color="#8FA8C4" animate={animate}>multi-agent infrastructure</TerminalHighlight> <em>from training through deployment</em>.
+                  <TerminalHighlight delay={1.1} color="#C9A852" animate={animate}>AI Engineer</TerminalHighlight> &amp; <TerminalHighlight delay={1.35} color="#C9A852" animate={animate}>MERN Stack Developer</TerminalHighlight>, building <TerminalHighlight delay={1.6} color="#8FA8C4" animate={animate}>intelligent, scalable software solutions</TerminalHighlight> with modern web technologies.
                 </h2>
 
                 <p className="hero-sub">
-                  Final-year CS at IIIT Pune, Class of 2027. Open to <CircuitUnderline delay={1.85} color="#C9A852" animate={animate}>junior AI/ML roles</CircuitUnderline> and <TerminalHighlight delay={2.1} color="#8FA8C4" animate={animate}>internships</TerminalHighlight>.
+                  I&apos;m an aspiring AI Engineer and MERN Stack Developer with 2 years of MERN experience and 4 years of WordPress development experience. <CircuitUnderline delay={1.85} color="#C9A852" animate={animate}>Open to Work — Available for New Opportunities</CircuitUnderline>.
                 </p>
 
                 <div className="hero-buttons">
@@ -583,7 +583,7 @@ export default function HeroSection({
                     <HoverScrambleText text="Explore featured work" />
                   </a>
                   <a
-                    href="https://www.linkedin.com/in/jonathan-jesni/"
+                    href="https://www.linkedin.com/in/talha-amir-sheikh/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-outline"
@@ -593,13 +593,13 @@ export default function HeroSection({
                     <HoverScrambleText text="Connect on LinkedIn" />
                   </a>
                   <a
-                    href="/assets/Jonathan_Resume.pdf"
+                    href="mailto:talhaamir.sh@gmail.com"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-outline"
                     id="hero-resume-btn"
                   >
-                    <HoverScrambleText text="View resume" />
+                    <HoverScrambleText text="Email Talha" />
                     <span className="btn-arrow" aria-hidden="true">↗</span>
                   </a>
                 </div>

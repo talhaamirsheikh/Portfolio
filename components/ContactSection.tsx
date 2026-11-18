@@ -199,7 +199,7 @@ export default function ContactSection({ animate = true }: ContactSectionProps) 
         <div className="contact-inner">
           {/* Rolling Headline — scroll-triggered tumbler animation */}
           <RollingHeadline
-            text="Get In Touch"
+            text="Let's Build Something Intelligent Together"
             className="contact-heading"
             animate={animate && headlineReady}
             manualTrigger={true}
@@ -207,9 +207,9 @@ export default function ContactSection({ animate = true }: ContactSectionProps) 
 
           {/* Sub-copy */}
           <p className="contact-text">
-            I&apos;m actively looking for internships and opportunities to build
-            impactful systems. Whether you have a question, a project idea, or
-            just want to connect, my inbox is open.
+            I&apos;m open to exciting opportunities in AI Engineering, MERN Stack Development,
+            Full Stack Development, and other relevant software engineering roles. Connect with
+            me for opportunities, collaborations, or interesting projects. Based in Lahore, Pakistan.
           </p>
 
           {/* Button grid — sequentially revealed by the secondary GSAP tween */}
@@ -224,7 +224,7 @@ export default function ContactSection({ animate = true }: ContactSectionProps) 
             }}
           >
             <a
-              href="mailto:jonathan.jesni.m@gmail.com"
+              href="mailto:talhaamir.sh@gmail.com"
               className="contact-link"
               id="contact-email-btn"
             >
@@ -233,7 +233,7 @@ export default function ContactSection({ animate = true }: ContactSectionProps) 
             </a>
 
             <a
-              href="https://github.com/Jonathan-Jesni?tab=repositories"
+              href="https://github.com/talhaamirsheikh"
               target="_blank"
               rel="noopener noreferrer"
               className="contact-link"
@@ -244,7 +244,7 @@ export default function ContactSection({ animate = true }: ContactSectionProps) 
             </a>
 
             <a
-              href="https://www.linkedin.com/in/jonathan-jesni/"
+              href="https://www.linkedin.com/in/talha-amir-sheikh/"
               target="_blank"
               rel="noopener noreferrer"
               className="contact-link"
@@ -255,14 +255,12 @@ export default function ContactSection({ animate = true }: ContactSectionProps) 
             </a>
 
             <a
-              href="/assets/Jonathan_Resume.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="tel:+923297534322"
               className="contact-link"
               id="contact-resume-btn"
             >
               <DownloadIcon />
-              <HoverScrambleText text="View Resume ↗" />
+              <HoverScrambleText text="+92 329 7534322" />
             </a>
           </div>
         </div>

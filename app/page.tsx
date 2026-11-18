@@ -51,40 +51,30 @@ const NAV_ITEMS = [
 ] as const;
 
 const SKILL_PILLS = [
+  "Artificial Intelligence",
+  "Generative AI",
+  "AI Integration",
+  "AI-powered Applications",
+  "MongoDB",
+  "Express.js",
+  "React.js",
+  "Node.js",
+  "JavaScript",
+  "REST APIs",
   "HTML5",
   "CSS3",
   "Tailwind CSS",
-  "JavaScript",
-  "React.js",
-  "Next.js",
-  "Express.js",
-  "Node.js",
-  "MongoDB",
-  "SQL",
+  "Bootstrap",
+  "Responsive Web Design",
+  "PHP",
+  "MySQL",
+  "REST API Integration",
   "WordPress",
-  "Shopify Store Development",
-  "Plugin Development",
-  "Python",
-  "Django",
-  "REST APIs",
-  "FastAPI",
-  "NumPy",
-  "Pandas",
-  "Machine Learning / Deep Learning",
-  "Keras",
-  "TensorFlow",
-  "PyTorch",
-  "Computer Vision",
-  "LLMs / GenAI",
-  "Agentic AI",
-  "LangChain",
-  "Recommender Systems",
-  "Semantic Segmentation",
-  "YOLO",
-  "Docker",
-  "Google Cloud",
-  "GPU Computing",
-  "Hugging Face",
+  "WooCommerce",
+  "Elementor",
+  "Data Analytics",
+  "Git",
+  "GitHub",
 ] as const;
 
 const CHAPTER_TARGETS = [
@@ -519,7 +509,7 @@ export default function Home() {
               travelTo(0, event.detail === 0);
             }}
           >
-            <span className="bracket">&#123;</span>J
+            <span className="bracket">&#123;</span>T
             <span className="bracket">&#125;</span>
           </a>
 
@@ -539,13 +529,11 @@ export default function Home() {
           </ul>
 
           <a
-            href="/assets/Jonathan_Resume.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="mailto:talhaamir.sh@gmail.com"
             className="nav-resume"
             id="nav-resume-btn"
           >
-            <HoverScrambleText text="Resume" />
+            <HoverScrambleText text="Email" />
             <span className="nav-resume-arrow" aria-hidden="true">
               ↗
             </span>
@@ -601,12 +589,10 @@ export default function Home() {
         ))}
 
         <a
-          href="/assets/Jonathan_Resume.pdf"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="mailto:talhaamir.sh@gmail.com"
           onClick={() => setIsMenuOpen(false)}
         >
-          Resume ↗
+          Email Talha ↗
         </a>
       </div>
 
@@ -686,8 +672,8 @@ export default function Home() {
                   letterSpacing: "-0.01em",
                 }}
               >
-                Technologies and frameworks I use to engineer robust, scalable
-                systems.
+                AI, MERN Stack, frontend and backend technologies I use to build
+                intelligent, scalable software solutions.
               </p>
 
               <div className="sp-reveal" data-chapter-body>

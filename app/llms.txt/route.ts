@@ -1,6 +1,6 @@
 import { PROJECTS, BUILDING } from "@/lib/data";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jonathanjesni.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://talhaamirsheikh.github.io";
 
 // First sentence of a description field, used as a tight one-line gist.
 function firstSentence(text: string): string {
@@ -54,9 +54,9 @@ function buildBuildingSection(): string {
 }
 
 function buildBody(): string {
-  return `# Jonathan Jesni
+  return `# Talha Sheikh
 
-> AI/ML engineer working on computer vision and multi-agent systems; final-year CS at IIIT Pune (Class of 2027); open to Junior AI/ML roles and internships.
+> AI Engineer and MERN Stack Developer with 2 years of MERN experience and 4 years of WordPress development experience. BSCS student in the 7th semester at The Superior University Lahore, expected to graduate in 2027. Open to work.
 
 ## Projects
 ${buildProjectsSection()}
@@ -66,9 +66,11 @@ ${buildBuildingSection()}
 
 ## Links
 - Site: ${SITE_URL}
-- GitHub: https://github.com/Jonathan-Jesni
-- LinkedIn: https://www.linkedin.com/in/jonathan-jesni/
-- Resume: ${SITE_URL}/assets/Jonathan_Resume.pdf
+- Email: talhaamir.sh@gmail.com
+- Phone: +92 329 7534322
+- Location: Lahore, Pakistan
+- GitHub: https://github.com/talhaamirsheikh
+- LinkedIn: https://www.linkedin.com/in/talha-amir-sheikh/
 `;
 }
 

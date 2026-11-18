@@ -109,7 +109,7 @@ test("a hard load renders one visual stage and hands off to the cinematic hero",
 
   await expect(loader).toHaveCount(0, { timeout: 15_000 });
   await expect(page.locator("html")).toHaveAttribute("data-motion-ready", "true");
-  await expect(page.getByRole("heading", { name: "Jonathan Jesni" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Talha Sheikh" })).toBeVisible();
   await expect(page.locator(".hero-buttons")).toBeVisible();
   await expect(stageCanvas).toHaveCount(initialCanvasCount);
 });
@@ -433,7 +433,7 @@ test("reduced motion preserves every chapter and its signature hero composition"
   await page.emulateMedia({ reducedMotion: "reduce" });
   await openPortfolio(page);
 
-  await expect(page.getByRole("heading", { name: "Jonathan Jesni" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Talha Sheikh" })).toBeVisible();
   await expect(page.locator(".hero-laptop-poster")).toBeVisible();
   await expect(page.locator(".hero-3d-layer canvas")).toHaveCount(0);
 

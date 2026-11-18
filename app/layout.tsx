@@ -12,7 +12,7 @@ import "./evolution.css";
 
 // Absolute-URL base for canonical links, OG/Twitter images, and the sitemap.
 // Env var wins on Vercel previews; falls back to the production domain.
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jonathanjesni.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://talhaamirsheikh.github.io";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -40,35 +40,33 @@ const instrumentSerif = Instrument_Serif({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   alternates: { canonical: "/" },
-  title: "Jonathan Jesni: AI & Systems Developer",
+  title: "Talha Sheikh: AI Engineer & MERN Stack Developer",
   description:
-    "Jonathan Jesni's developer portfolio: AI/ML tools, computer vision, and real-world software engineering.",
+    "Talha Sheikh's portfolio: AI Engineering, AI-powered applications, MERN Stack development, and WordPress development.",
   keywords: [
-    "Jonathan Jesni",
-    "AI developer",
-    "systems developer",
-    "frontend engineer",
-    "machine learning portfolio",
-    "deep learning",
-    "recommendation systems",
-    "computer vision",
-    "document processing",
-    "Next.js portfolio",
+    "Talha Sheikh",
+    "AI Engineer",
+    "MERN Stack Developer",
+    "Full Stack Developer",
+    "React.js Developer",
+    "Artificial Intelligence",
+    "Generative AI",
+    "WordPress Developer",
   ],
   openGraph: {
-    title: "Jonathan Jesni: AI & Systems Developer",
+    title: "Talha Sheikh: AI Engineer & MERN Stack Developer",
     description:
-      "Jonathan Jesni's developer portfolio: AI/ML tools, computer vision, and real-world software engineering.",
+      "Talha Sheikh's portfolio: AI Engineering, MERN Stack development, and WordPress development.",
     type: "website",
     url: "/",
-    siteName: "Jonathan Jesni",
+    siteName: "Talha Sheikh",
     // og:image is injected automatically by app/opengraph-image.jpeg
   },
   twitter: {
     card: "summary_large_image",
-    title: "Jonathan Jesni: AI & Systems Developer",
+    title: "Talha Sheikh: AI Engineer & MERN Stack Developer",
     description:
-      "AI/ML tools, computer vision, and real-world software engineering projects by Jonathan Jesni.",
+      "AI Engineering and MERN Stack development by Talha Sheikh.",
     // twitter:image is injected automatically by app/twitter-image.jpeg
   },
 };
@@ -114,16 +112,16 @@ if (!location.hash) window.scrollTo(0, 0);`}
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Person",
-              name: "Jonathan Jesni",
+              name: "Talha Sheikh",
               url: SITE_URL,
-              jobTitle: "AI & Systems Developer",
+              jobTitle: "AI Engineer & MERN Stack Developer",
               alumniOf: {
                 "@type": "CollegeOrUniversity",
-                name: "Indian Institute of Information Technology, Pune",
+                name: "The Superior University Lahore",
               },
               sameAs: [
-                "https://github.com/Jonathan-Jesni",
-                "https://www.linkedin.com/in/jonathan-jesni/",
+                "https://github.com/talhaamirsheikh",
+                "https://www.linkedin.com/in/talha-amir-sheikh/",
               ],
             }),
           }}

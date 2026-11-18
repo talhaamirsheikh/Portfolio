@@ -18,18 +18,17 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
 // while BioWords still splits the rest at the word level.
 const BIO_PARAGRAPHS = [
   <>
-    I&apos;m a final-year Computer Science student at IIIT Pune who builds real tools, not just
-    coursework. My focus areas are <strong>AI/ML</strong>, <strong>computer vision</strong>, and{" "}
-    <strong>systems design</strong>, and I gravitate toward projects that solve practical, tangible
-    problems.
+    I&apos;m currently pursuing a <strong>BS in Computer Science</strong> in my 7th semester at The Superior University Lahore,
+    with an expected graduation in <strong>2027</strong>. I&apos;m passionate about <strong>Artificial Intelligence</strong>,
+    AI-powered applications, and intelligent software solutions.
   </>,
   <>
-    Whether it&apos;s training a dual-stacked U-Net for medical image segmentation, generating
-    synthetic disaster scene data in Blender, or engineering a deterministic document converter, I focus
-    on software that <strong>works in the real world</strong>.
+    I bring <strong>2 years of practical MERN Stack development experience</strong> and <strong>4 years of WordPress development experience</strong>.
+    I build modern full stack applications with React.js, Node.js, Express.js, MongoDB, REST APIs, and WordPress technologies.
   </>,
   <>
-    Final-year CS @ IIIT Pune (Class of 2027) · open to <strong>Junior AI/ML roles &amp; internships</strong>.
+    I&apos;ve completed professional training in <strong>Artificial Intelligence</strong>, <strong>Full Stack Web Development</strong>,
+    and <strong>Data Analytics</strong>. I&apos;m open to work and interested in AI Engineering and software development opportunities.
   </>,
 ];
 

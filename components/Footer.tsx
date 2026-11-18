@@ -72,12 +72,12 @@ export default function Footer() {
     <footer className="site-footer" id="footer">
       <div className="footer-row">
         <button type="button" className="footer-logo" onClick={backToTop} aria-label="Back to top">
-          <span className="bracket">&#123;</span>J<span className="bracket">&#125;</span>
+          <span className="bracket">&#123;</span>T<span className="bracket">&#125;</span>
         </button>
 
         <span className="footer-status">
           <span className="footer-dot" aria-hidden="true" />
-          open to Junior AI/ML roles &amp; internships · Class of 2027
+          Open to Work · AI Engineer · MERN Stack Developer
         </span>
 
         <span className="footer-stack">
@@ -86,7 +86,7 @@ export default function Footer() {
       </div>
 
       <div className="footer-sub">
-        <span>© 2026 Jonathan Jesni</span>
+        <span>© 2026 Talha Sheikh</span>
         <LocalClock />
       </div>
     </footer>

@@ -20,23 +20,29 @@ function JsonOutput() {
     <pre className="term-output">
       <G>{'{'}</G>{
         '\n'}
-      {'  '}<span className="term-key">&quot;current&quot;</span><G>{': '}</G><span className="term-str">&quot;B.Tech CSE, IIIT Pune&quot;</span><G>{','}</G>{
+      {'  '}<span className="term-key">&quot;education&quot;</span><G>{': '}</G><span className="term-str">&quot;BSCS, The Superior University Lahore&quot;</span><G>{','}</G>{
         '\n'}
-      {'  '}<span className="term-key">&quot;year&quot;</span><G>{': '}</G><span className="term-str">&quot;Final Year&quot;</span><G>{','}</G>{
+      {'  '}<span className="term-key">&quot;semester&quot;</span><G>{': '}</G><span className="term-str">&quot;7th Semester, Graduating 2027&quot;</span><G>{','}</G>{
         '\n'}
-      {'  '}<span className="term-key">&quot;location&quot;</span><G>{': '}</G><span className="term-str">&quot;Pune, India / Muscat, Oman&quot;</span><G>{','}</G>{
+      {'  '}<span className="term-key">&quot;location&quot;</span><G>{': '}</G><span className="term-str">&quot;Lahore, Pakistan&quot;</span><G>{','}</G>{
         '\n'}
       {'  '}<span className="term-key">&quot;focus&quot;</span><G>{': ['}</G>{
         '\n'}
-      {'    '}<span className="term-str">&quot;AI/ML&quot;</span><G>{','}</G>{
+      {'    '}<span className="term-str">&quot;Artificial Intelligence&quot;</span><G>{','}</G>{
         '\n'}
-      {'    '}<span className="term-str">&quot;Computer Vision&quot;</span><G>{','}</G>{
+      {'    '}<span className="term-str">&quot;MERN Stack Development&quot;</span><G>{','}</G>{
         '\n'}
-      {'    '}<span className="term-str">&quot;Systems&quot;</span>{
+      {'    '}<span className="term-str">&quot;WordPress Development&quot;</span>{
         '\n'}
       {'  '}<G>{'],'}</G>{
         '\n'}
-      {'  '}<span className="term-key">&quot;status&quot;</span><G>{': '}</G><span className="term-str">&quot;open to internships&quot;</span>{
+      {'  '}<span className="term-key">&quot;experience&quot;</span><G>{': '}</G><span className="term-str">&quot;MERN: 2 Years | WordPress: 4 Years&quot;</span><G>{','}</G>{
+        '\n'}
+      {'  '}<span className="term-key">&quot;roles&quot;</span><G>{': '}</G><span className="term-str">&quot;MERN Stack Developer at Ronnie Ridge Technology; WordPress Developer at 2Axis and Firm Tech Services&quot;</span><G>{','}</G>{
+        '\n'}
+      {'  '}<span className="term-key">&quot;training&quot;</span><G>{': '}</G><span className="term-str">&quot;NAVTTC: Data Analytics | Corvit Systems: AI and Full Stack Web Development&quot;</span><G>{','}</G>{
+        '\n'}
+      {'  '}<span className="term-key">&quot;status&quot;</span><G>{': '}</G><span className="term-str">&quot;Open to Work&quot;</span>{
         '\n'}
       <G>{'}'}</G>
     </pre>
@@ -119,7 +125,7 @@ export default function TerminalBlock() {
             <span className="term-dot term-dot--yellow" />
             <span className="term-dot term-dot--green" />
           </div>
-          <span className="term-title">guest@jonathan: ~</span>
+          <span className="term-title">talha@portfolio: ~</span>
         </div>
 
         {/* ---- Body ---- */}
