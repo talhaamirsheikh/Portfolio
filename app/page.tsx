@@ -134,6 +134,10 @@ export default function Home() {
   const navigationActiveRef = useRef(false);
   const motionFailedRef = useRef(false);
   const desktopScrub = environment?.desktopScrub ?? false;
+  const mobileHandoff =
+    environment?.coarsePointer === true &&
+    !environment.reducedMotion &&
+    environment.webglAvailable;
 
   const failOpen = useCallback(() => {
     if (motionFailedRef.current) return;
@@ -608,6 +612,7 @@ export default function Home() {
           <StickyDeckSection
             portfolioSectionRef={portfolioSectionRef}
             motionEnabled={desktopScrub}
+            mobileHandoff={mobileHandoff}
           />
         </div>
 

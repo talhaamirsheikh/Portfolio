@@ -702,9 +702,11 @@ function ProjectSlide({ project, index, hue, eager, active, scrubActive, onOpen 
 export default function StickyDeckSection({
   portfolioSectionRef,
   motionEnabled = true,
+  mobileHandoff = false,
 }: {
   portfolioSectionRef?: React.RefObject<HTMLElement | null>;
   motionEnabled?: boolean;
+  mobileHandoff?: boolean;
 }) {
   const fallbackRef = useRef<HTMLElement>(null);
   const sectionRef = portfolioSectionRef || fallbackRef;
@@ -765,7 +767,12 @@ export default function StickyDeckSection({
     const targets: HTMLElement[] = [
       ...root.querySelectorAll<HTMLElement>(".more-work-item"),
       ...(naturalFlow
-        ? root.querySelectorAll<HTMLElement>(".cs-slide, .sd-header .ed-header")
+        ? [
+            ...root.querySelectorAll<HTMLElement>(".cs-slide"),
+            ...(!mobileHandoff
+              ? root.querySelectorAll<HTMLElement>(".sd-header .ed-header")
+              : []),
+          ]
         : []),
     ];
     if (!targets.length) return;
@@ -798,7 +805,7 @@ export default function StickyDeckSection({
         el.style.removeProperty("transition-delay");
       });
     };
-  }, [scrubActive, sectionRef]);
+  }, [mobileHandoff, scrubActive, sectionRef]);
 
   const suspendSnap = useCallback((fallbackMs: number) => {
     snapSuspendedRef.current = true;
@@ -1057,7 +1064,7 @@ export default function StickyDeckSection({
   return (
     <section
       ref={sectionRef}
-      className="sticky-deck-section"
+      className={`sticky-deck-section${mobileHandoff ? " sticky-deck-section--mobile-handoff" : ""}`}
       id="projects"
       style={{ opacity: 0, pointerEvents: "none" }}
     >

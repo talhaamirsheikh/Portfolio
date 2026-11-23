@@ -40,19 +40,17 @@ export function resolveMotionEnvironment(): MotionEnvironment {
     "(prefers-reduced-motion: reduce)",
   ).matches;
   const coarsePointer = !window.matchMedia("(pointer: fine)").matches;
+  const graphics = probeWebGLSupport();
 
   if (coarsePointer) {
-    // Product policy: mobile is DOM-only; this is not a WebGL capability result.
     return {
       desktopScrub: false,
       stageViewport: false,
       coarsePointer: true,
       reducedMotion,
-      webglAvailable: false,
+      webglAvailable: graphics.available,
     };
   }
-
-  const graphics = probeWebGLSupport();
 
   return {
     desktopScrub: window.matchMedia(IMMERSIVE_SCROLL_MEDIA_QUERY).matches,
@@ -76,27 +74,35 @@ export function resolveAdaptiveQuality(
   const pixelBudgetDpr = Math.sqrt(PIXEL_BUDGET / viewportPixels);
   const deviceDpr =
     typeof window === "undefined" ? 1 : window.devicePixelRatio || 1;
+  const coarsePointer =
+    typeof window !== "undefined" &&
+    !window.matchMedia("(pointer: fine)").matches;
   const constrained =
     !graphics.available || graphics.isSoftware || graphics.isIntegrated;
 
   return {
-    dpr: Math.max(0.5, Math.min(deviceDpr, 1.35, pixelBudgetDpr)),
-    antialias: graphics.available && !graphics.isSoftware,
-    environmentResolution: constrained ? 32 : 64,
+    dpr: Math.max(
+      0.5,
+      Math.min(deviceDpr, coarsePointer ? 1 : 1.35, pixelBudgetDpr),
+    ),
+    antialias: graphics.available && !graphics.isSoftware && !coarsePointer,
+    environmentResolution: constrained || coarsePointer ? 32 : 64,
     shaderDetailScale: !graphics.available
       ? 0.5
       : graphics.isSoftware
         ? 0.55
-        : constrained
+        : constrained || coarsePointer
           ? 0.78
           : 1,
-    parallaxScale: !graphics.available
-      ? 0.3
-      : graphics.isSoftware
-        ? 0.35
-        : constrained
-          ? 0.7
-          : 1,
+    parallaxScale: coarsePointer
+      ? 0
+      : !graphics.available
+        ? 0.3
+        : graphics.isSoftware
+          ? 0.35
+          : constrained
+            ? 0.7
+            : 1,
   };
 }
 

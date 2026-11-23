@@ -30,6 +30,7 @@ export const metadata: Metadata = {
 export default function ProjectsHeaderRender() {
   return (
     <div
+      className="projects-header-capture"
       style={{
         position: "fixed",
         inset: 0,

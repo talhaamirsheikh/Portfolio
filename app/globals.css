@@ -2566,7 +2566,7 @@ canvas.glass-image-canvas {
    dissolve. Override the initial inline reveal gate so the static deck remains
    visible without depending on scrub timing. */
 @media (max-width: 899px) {
-  .sticky-deck-section {
+  .sticky-deck-section:not(.sticky-deck-section--mobile-handoff) {
     opacity: 1 !important;
     pointer-events: auto !important;
   }
@@ -3538,7 +3538,7 @@ canvas.glass-image-canvas {
    HERO 3D LAYER -- full-viewport sticky canvas background
    Sits behind the text (z-index 0). Negative margin-bottom
    ensures it does not push the hero-sticky content down.
-   Hidden on mobile to keep layout clean.
+   Mounted only when the device supports the full-motion WebGL stage.
    ============================================================ */
 .hero-3d-layer {
   display: none;
@@ -3561,7 +3561,7 @@ canvas.glass-image-canvas {
 /* Atmospheric depth - a gold pool low-left and a faint cool-blue orb
    upper-left, painted BEHIND the transparent canvas so the laptop mesh
    always sits above it (never tinted) and the glow fades out with the
-   layer at the projects handoff. Desktop only (layer is hidden < 900px). */
+   layer at the projects handoff. */
 .hero-3d-layer::before {
   content: "";
   position: absolute;
@@ -3573,7 +3573,7 @@ canvas.glass-image-canvas {
     radial-gradient(ellipse 40% 40% at 22% 30%, rgba(143, 168, 196, 0.05), transparent 72%);
 }
 
-@media (prefers-reduced-motion: no-preference) {
+@media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
   .hero-3d-layer::before {
     will-change: transform;
     animation: heroAtmoDrift 26s var(--ease-in-out-expo) infinite alternate;

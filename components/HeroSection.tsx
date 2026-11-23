@@ -72,36 +72,27 @@ export default function HeroSection({
   const entranceEnabled =
     motionEnabled || (environment?.coarsePointer ?? false);
   const webglAvailable = environment?.webglAvailable ?? true;
-  const renderLaptop =
+  const mobileStage =
+    environment?.coarsePointer === true && !environment.reducedMotion;
+  const desktopStage =
     motionEnabled &&
-    webglAvailable &&
     (environment?.stageViewport ?? false) &&
     !environment?.coarsePointer &&
     !environment?.reducedMotion;
+  const renderDevice = webglAvailable && (mobileStage || desktopStage);
   const mountVisualStage =
     environment != null &&
-    /* Two floors, mirroring main: the scrub story runs from 768px
-       (desktopScrub) but the WebGL stage only exists from 900px
-       (stageViewport). 768-899px runs pinned scrub with a text-only
-       hero — mounting a CSS-hidden canvas there would waste a GL
-       context and feed the preloader a gate that never resolves. */
-    environment.desktopScrub &&
-    environment.stageViewport &&
+    (mobileStage || desktopStage) &&
     webglAvailable &&
-    !environment.coarsePointer &&
-    !environment.reducedMotion &&
     !stageFailed;
-  /* Poster only on NON-immersive fine-pointer tiers (reduced motion,
-     no WebGL, stage crash, sub-768 windows). Inside the immersive story
-     the hero is either the real laptop (>=900) or text-only (768-899),
-     exactly like main. */
+  /* Keep a static device fallback for reduced-motion, unsupported, or failed
+     stages. Fine-pointer 768-899px still uses the text-only scrub story. */
   const showPoster =
     environment != null &&
-    !environment.coarsePointer &&
     (stageFailed ||
       !webglAvailable ||
       environment.reducedMotion ||
-      !environment.desktopScrub);
+      (!environment.coarsePointer && !environment.desktopScrub));
 
   useEffect(() => {
     if (environmentOverride) return;
@@ -481,6 +472,7 @@ export default function HeroSection({
       {mountVisualStage && (
         <div
           className="hero-3d-layer"
+          data-device={environment?.coarsePointer ? "smartphone" : "laptop"}
           aria-hidden="true"
           style={{
             display: "block",
@@ -490,7 +482,8 @@ export default function HeroSection({
         >
           <InteractiveModel
             portfolioSectionRef={portfolioSectionRef}
-            renderLaptop={renderLaptop}
+            renderDevice={renderDevice}
+            mobile={environment?.coarsePointer ?? false}
             onFail={() => setStageFailed(true)}
           />
         </div>
@@ -606,19 +599,32 @@ export default function HeroSection({
               </div>
             </div>
             {showPoster && (
-              <div className="hero-laptop-poster" aria-hidden="true">
-                <div className="hero-laptop-poster__lid">
-                  <div className="hero-laptop-poster__screen">
+              environment?.coarsePointer ? (
+                <div className="hero-phone-poster" aria-hidden="true">
+                  <div className="hero-phone-poster__screen">
                     <Image
-                      src="/assets/Neuro-genesis/title-card.jpg"
+                      src="/assets/textures/bg-mobile.jpg"
                       alt=""
                       fill
-                      sizes="(min-width: 900px) 42vw, 82vw"
+                      sizes="(max-width: 767px) 42vw, 220px"
                     />
                   </div>
                 </div>
-                <div className="hero-laptop-poster__base" />
-              </div>
+              ) : (
+                <div className="hero-laptop-poster" aria-hidden="true">
+                  <div className="hero-laptop-poster__lid">
+                    <div className="hero-laptop-poster__screen">
+                      <Image
+                        src="/assets/Neuro-genesis/title-card.jpg"
+                        alt=""
+                        fill
+                        sizes="(min-width: 900px) 42vw, 82vw"
+                      />
+                    </div>
+                  </div>
+                  <div className="hero-laptop-poster__base" />
+                </div>
+              )
             )}
           </div>
         </div>

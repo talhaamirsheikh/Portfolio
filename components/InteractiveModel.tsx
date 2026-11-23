@@ -10,6 +10,7 @@ import {
   Environment,
   Lightformer,
   PerformanceMonitor,
+  RoundedBox,
 } from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
@@ -28,22 +29,41 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 // take down the hero; the GLB would otherwise dead-end into the preloader's
 // 9s failsafe.
 const DRACO_DECODER_PATH = "/draco/";
-useGLTF.preload("/assets/hardware_laptop.glb", DRACO_DECODER_PATH);
-/* bg.jpg is CPU-only (drawn into the boot canvas — never GPU-sampled), so it
-   loads via ImageLoader instead of useTexture: same DefaultLoadingManager
-   registration (the PreLoader manifest gate DEPENDS on that — see
-   PreLoader.tsx header), no ~27MB dead GPU upload. Module scope so the fetch
-   + manifest registration start at exactly the same time as before. */
+if (
+  typeof window !== "undefined" &&
+  window.matchMedia("(pointer: fine)").matches
+) {
+  useGLTF.preload("/assets/hardware_laptop.glb", DRACO_DECODER_PATH);
+}
+/* Header captures are CPU-only (drawn into the boot canvas — never
+   GPU-sampled), so they load via ImageLoader instead of useTexture: same
+   DefaultLoadingManager registration (the PreLoader manifest gate DEPENDS
+   on that — see PreLoader.tsx header), no ~27MB dead GPU upload. Module scope
+   so both fetches register with the manifest as soon as the module loads. */
 let bgImage: HTMLImageElement | null = null;
-const bgImagePromise =
+let bgMobileImage: HTMLImageElement | null = null;
+const bgImagesPromise =
   typeof window === "undefined"
     ? null
-    : new THREE.ImageLoader().loadAsync("/assets/textures/bg.jpg").then((img) => { bgImage = img; return img; }).catch(() => null);
+    : Promise.all([
+        new THREE.ImageLoader()
+          .loadAsync("/assets/textures/bg.jpg")
+          .then((image) => { bgImage = image; }),
+        new THREE.ImageLoader()
+          .loadAsync("/assets/textures/bg-mobile.jpg")
+          .then((image) => { bgMobileImage = image; }),
+      ]).catch((error: unknown) => {
+        console.error("Failed to load a laptop header texture.", error);
+      });
 useTexture.preload("/assets/textures/Mac Keyboard.jpg");
 
 /* ── Boot-screen canvas dimensions ── */
 const BOOT_W = 1536;
 const BOOT_H = 987;
+const MOBILE_CAPTURE_WIDTH = 390;
+const MOBILE_CAPTURE_HEIGHT = 844;
+const MOBILE_CAPTURE_HEADING_X = 24;
+const MOBILE_CAPTURE_HEADING_Y = 110.45;
 
 /* ── Phase thresholds (hero scroll progress, 0→1) ── */
 const BOOT_P1 = 0.27;
@@ -69,9 +89,10 @@ function drawBootScreen(
   clockTime: number,
   bgImage: HTMLImageElement | ImageBitmap | null,
   prefersReduced: boolean,
+  mobile: boolean,
 ): void {
-  const W = BOOT_W;
-  const H = BOOT_H;
+  const W = ctx.canvas.width;
+  const H = ctx.canvas.height;
 
   ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = "#0D0B09";
@@ -129,7 +150,9 @@ function drawBootScreen(
       : (bgImage as ImageBitmap).height;
 
     if (imgW > 0 && imgH > 0) {
-      const scale = Math.max(W / imgW, H / imgH) * COVER_OVERSHOOT;
+      const scale = mobile
+        ? Math.min(W / imgW, H / imgH)
+        : Math.max(W / imgW, H / imgH) * COVER_OVERSHOOT;
       const dx    = (W - imgW * scale) / 2;
       const dy    = (H - imgH * scale) / 2;
 
@@ -142,101 +165,19 @@ function drawBootScreen(
 }
 
 /* ─────────────────────────────────────────────────────────────────────
-   LAPTOP SCENE
+   DEVICE MODELS
    ───────────────────────────────────────────────────────────────── */
-function LaptopScene({
-  canvasWrapperDOMRef,
-  portfolioSectionRef,
-  lowPerf = false,
-  parallaxScale = 1,
-  onReady,
+function LaptopModel({
+  screenTexture,
+  hingeRef,
 }: {
-  canvasWrapperDOMRef: React.RefObject<HTMLDivElement | null>;
-  portfolioSectionRef?: React.RefObject<HTMLElement | null>;
-  lowPerf?: boolean;
-  parallaxScale?: number;
-  onReady: () => void;
+  screenTexture: THREE.Texture;
+  hingeRef: React.RefObject<THREE.Group | null>;
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { nodes, materials } = useGLTF("/assets/hardware_laptop.glb", DRACO_DECODER_PATH) as any;
   const keyboardTex = useTexture("/assets/textures/Mac Keyboard.jpg");
 
-  const globalContainerRef  = useRef<THREE.Group>(null);
-  const lidHingeGroupRef    = useRef<THREE.Group>(null);
-  const parallaxGroupRef    = useRef<THREE.Group>(null);
-  // Persistent (unfaded) pointer-parallax accumulator. The applied group
-  // rotation is this × fade, so fade can force it to exactly 0 at cover time.
-  const parallaxCur         = useRef({ x: 0, y: 0 });
-  // Manual pointer tracker (normalized -1..1, R3F convention: x right+, y up+).
-  // The canvas is pointer-events:none (see InteractiveModel wrapper) so
-  // state.pointer never updates from real input — this window listener
-  // replaces it for the parallax below.
-  const pointerRef          = useRef({ x: 0, y: 0 });
-  const { camera, size, invalidate } = useThree();
-  /* Live mirror for coverZ: ScrollTrigger's invalidateOnRefresh re-evaluates
-     function-based values on every refresh (which resize triggers), so the
-     scrub setup below must NOT depend on `size` — each PerformanceMonitor
-     DPR flip changed its identity and re-ran the setup, stacking scrub
-     ScrollTriggers (measured 45 on #hero) until the tab OOM'd. */
-  const sizeRef = useRef(size);
-  // eslint-disable-next-line react-hooks/refs -- Intentional: cross-root ScrollTrigger.refresh() can read coverZ before effects flush.
-  sizeRef.current = size;
-
-  const bootProgressRef     = useRef(0);
-  const lastBootProgressRef = useRef(-1);
-  // Timestamp of the last scroll event — kept only as a short jitter grace now;
-  // the demand loop is really held open by the scrub tween's own activity below.
-  const scrollSettleRef     = useRef(0);
-  // The main scrub timeline's ScrollTrigger, captured so the boot useFrame can
-  // keep rendering until its scrub tween has actually finished easing (a fixed
-  // timeout under-shoots the ease tail → the lid-open stalls just short).
-  const scrollTriggerRef    = useRef<ScrollTrigger | null>(null);
-
-  const prefersReduced = useMemo(
-    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    []
-  );
-
-  /* ── Boot-screen canvas + CanvasTexture ── */
-  const boot = useMemo(() => {
-    const canvas = document.createElement("canvas");
-    canvas.width  = BOOT_W;
-    canvas.height = BOOT_H;
-    const ctx = canvas.getContext("2d")!;
-    ctx.fillStyle = "#0D0B09";
-    ctx.fillRect(0, 0, BOOT_W, BOOT_H);
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.flipY       = false;
-    tex.colorSpace  = THREE.SRGBColorSpace;
-    // No mips: −33% GPU memory and no per-upload mip-chain regen (the dots
-    // phase uploads per frame) — the screen is viewed ≥ native scale in every
-    // detail-bearing phase, so mip filtering buys nothing.
-    tex.generateMipmaps = false;
-    tex.minFilter       = THREE.LinearFilter;
-    return { canvas, ctx, tex };
-  }, []);
-
-  useEffect(() => {
-    return () => { boot.tex.dispose(); };
-  }, [boot]);
-
-  /* bgImage loads async off the module-scope ImageLoader (see top of file).
-     If it resolves AFTER the useFrame's drawKey change-detection has already
-     latched onto a constant key (e.g. playhead parked mid-phase-2 with no new
-     scroll), the header would stay undrawn until the next key change. Force
-     one redraw once the image is actually available. */
-  useEffect(() => {
-    let cancelled = false;
-    bgImagePromise?.then(() => {
-      if (cancelled) return;
-      lastBootProgressRef.current = -1;
-      invalidate();
-    });
-    return () => { cancelled = true; };
-  }, [invalidate]);
-
-  /* ── Texture mapping & material calibrations ── */
   useMemo(() => {
     if (keyboardTex) {
       keyboardTex.flipY      = false;
@@ -246,7 +187,7 @@ function LaptopScene({
     if (materials.Image) {
       materials.Image.map              = null;
       materials.Image.color?.set?.("#000000");
-      materials.Image.emissiveMap      = boot.tex;
+      materials.Image.emissiveMap      = screenTexture;
       materials.Image.emissive         = new THREE.Color("#ffffff");
       materials.Image.emissiveIntensity = 1.0;
       materials.Image.toneMapped       = false;
@@ -273,24 +214,253 @@ function LaptopScene({
       materials.Keyboard.roughness = 0.5;
       materials.Keyboard.metalness = 0.1;
     }
-  }, [keyboardTex, materials, boot.tex]);
+  }, [keyboardTex, materials, screenTexture]);
+
+  return (
+    <group scale={[10, 10, 10]} position={[0, -0.65, 0]}>
+      <primitive object={nodes.Base_Chassis} />
+      <group ref={hingeRef} position={[0, 0.008614, -0.10311]}>
+        <primitive object={nodes.Lid_Screen} position={[0, -0.008614, 0.10311]} />
+      </group>
+    </group>
+  );
+}
+
+function SmartphoneModel({ screenTexture }: { screenTexture: THREE.Texture }) {
+  return (
+    <group position={[0, 0.6879, 0]}>
+      <RoundedBox
+        args={[1.2, 2.6, 0.14]}
+        radius={0.12}
+        smoothness={6}
+        position={[0, 0, -0.9389]}
+        castShadow
+        receiveShadow
+      >
+        <meshPhysicalMaterial
+          color="#f1f2f3"
+          metalness={0.72}
+          roughness={0.24}
+          clearcoat={0.9}
+          clearcoatRoughness={0.16}
+        />
+      </RoundedBox>
+      <RoundedBox
+        args={[1.12, 2.4, 0.012]}
+        radius={0.1}
+        smoothness={6}
+        position={[0, 0, -0.8599]}
+      >
+        <meshPhysicalMaterial
+          color="#06070a"
+          metalness={0.18}
+          roughness={0.14}
+          clearcoat={1}
+          clearcoatRoughness={0.08}
+        />
+      </RoundedBox>
+      <mesh position={[0, 0, -0.8509]}>
+        <planeGeometry args={[1.02, 2.2]} />
+        <meshBasicMaterial
+          map={screenTexture}
+          toneMapped={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      <RoundedBox
+        args={[0.26, 0.065, 0.012]}
+        radius={0.032}
+        smoothness={6}
+        position={[0, 1.105, -0.8439]}
+      >
+        <meshBasicMaterial color="#050608" />
+      </RoundedBox>
+      <mesh position={[0.071, 1.105, -0.836]}>
+        <sphereGeometry args={[0.012, 16, 12]} />
+        <meshPhysicalMaterial
+          color="#111827"
+          metalness={0.55}
+          roughness={0.18}
+          clearcoat={1}
+        />
+      </mesh>
+      <RoundedBox
+        args={[0.022, 0.28, 0.06]}
+        radius={0.01}
+        smoothness={4}
+        position={[-0.609, 0.62, -0.94]}
+      >
+        <meshStandardMaterial color="#d9dce0" metalness={0.82} roughness={0.22} />
+      </RoundedBox>
+      <RoundedBox
+        args={[0.022, 0.18, 0.06]}
+        radius={0.01}
+        smoothness={4}
+        position={[0.609, 0.72, -0.94]}
+      >
+        <meshStandardMaterial color="#d9dce0" metalness={0.82} roughness={0.22} />
+      </RoundedBox>
+      <RoundedBox
+        args={[0.36, 0.4, 0.035]}
+        radius={0.07}
+        smoothness={5}
+        position={[-0.34, 0.94, -1.02]}
+      >
+        <meshPhysicalMaterial color="#e5e6e8" metalness={0.48} roughness={0.28} />
+      </RoundedBox>
+      {[
+        [-0.46, 1.03],
+        [-0.23, 1.03],
+        [-0.46, 0.82],
+      ].map(([x, y]) => (
+        <mesh
+          key={`${x}-${y}`}
+          position={[x, y, -1.041]}
+          rotation={[Math.PI / 2, 0, 0]}
+        >
+          <cylinderGeometry args={[0.064, 0.064, 0.018, 24]} />
+          <meshPhysicalMaterial
+            color="#080b12"
+            metalness={0.52}
+            roughness={0.14}
+            clearcoat={1}
+          />
+        </mesh>
+      ))}
+      <mesh
+        position={[-0.23, 0.82, -1.041]}
+        rotation={[Math.PI / 2, 0, 0]}
+      >
+        <cylinderGeometry args={[0.045, 0.045, 0.018, 24]} />
+        <meshPhysicalMaterial color="#11151d" metalness={0.35} roughness={0.2} />
+      </mesh>
+    </group>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   SCROLL-SCRUBBED DEVICE
+   ───────────────────────────────────────────────────────────────── */
+function DeviceScene({
+  canvasWrapperDOMRef,
+  portfolioSectionRef,
+  mobile = false,
+  lowPerf = false,
+  parallaxScale = 1,
+  onReady,
+}: {
+  canvasWrapperDOMRef: React.RefObject<HTMLDivElement | null>;
+  portfolioSectionRef?: React.RefObject<HTMLElement | null>;
+  mobile?: boolean;
+  lowPerf?: boolean;
+  parallaxScale?: number;
+  onReady: () => void;
+}) {
+  const globalContainerRef  = useRef<THREE.Group>(null);
+  const lidHingeGroupRef    = useRef<THREE.Group>(null);
+  const parallaxGroupRef    = useRef<THREE.Group>(null);
+  // Persistent (unfaded) pointer-parallax accumulator. The applied group
+  // rotation is this × fade, so fade can force it to exactly 0 at cover time.
+  const parallaxCur         = useRef({ x: 0, y: 0 });
+  // Manual pointer tracker (normalized -1..1, R3F convention: x right+, y up+).
+  // The canvas is pointer-events:none (see InteractiveModel wrapper) so
+  // state.pointer never updates from real input — this window listener
+  // replaces it for the parallax below.
+  const pointerRef          = useRef({ x: 0, y: 0 });
+  const { camera, size, invalidate } = useThree();
+  /* Live mirror for coverZ: ScrollTrigger's invalidateOnRefresh re-evaluates
+     function-based values on every refresh (which resize triggers), so the
+     scrub setup below must NOT depend on `size` — each PerformanceMonitor
+     DPR flip changed its identity and re-ran the setup, stacking scrub
+     ScrollTriggers (measured 45 on #hero) until the tab OOM'd. */
+  const sizeRef = useRef(size);
+  // eslint-disable-next-line react-hooks/refs -- Intentional: cross-root ScrollTrigger.refresh() can read coverZ before effects flush.
+  sizeRef.current = size;
+
+  useEffect(() => {
+    if (!mobile) return;
+    camera.position.z = Math.max(
+      6.5,
+      5 / (size.width / Math.max(1, size.height)),
+    );
+    invalidate();
+  }, [camera, invalidate, mobile, size.height, size.width]);
+
+  const bootProgressRef     = useRef(0);
+  const lastBootProgressRef = useRef(-1);
+  // Timestamp of the last scroll event — kept only as a short jitter grace now;
+  // the demand loop is really held open by the scrub tween's own activity below.
+  const scrollSettleRef     = useRef(0);
+  // The main scrub timeline's ScrollTrigger, captured so the boot useFrame can
+  // keep rendering until its scrub tween has actually finished easing (a fixed
+  // timeout under-shoots the ease tail → the device entry stalls just short).
+  const scrollTriggerRef    = useRef<ScrollTrigger | null>(null);
+
+  const prefersReduced = useMemo(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    []
+  );
+
+  /* ── Boot-screen canvas + CanvasTexture ── */
+  const boot = useMemo(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width  = mobile ? 768 : BOOT_W;
+    canvas.height = mobile ? 1664 : BOOT_H;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#0D0B09";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.flipY       = mobile;
+    tex.colorSpace  = THREE.SRGBColorSpace;
+    // No mips: −33% GPU memory and no per-upload mip-chain regen (the dots
+    // phase uploads per frame) — the screen is viewed ≥ native scale in every
+    // detail-bearing phase, so mip filtering buys nothing.
+    tex.generateMipmaps = false;
+    tex.minFilter       = THREE.LinearFilter;
+    return { canvas, ctx, tex };
+  }, [mobile]);
+
+  useEffect(() => {
+    return () => { boot.tex.dispose(); };
+  }, [boot]);
+
+  /* Header captures load async off the module-scope ImageLoader (see above).
+     If it resolves AFTER the useFrame's drawKey change-detection has already
+     latched onto a constant key (e.g. playhead parked mid-phase-2 with no new
+     scroll), the header would stay undrawn until the next key change. Force
+     one redraw once the image is actually available. */
+  useEffect(() => {
+    let cancelled = false;
+    bgImagesPromise?.then(() => {
+      if (cancelled) return;
+      lastBootProgressRef.current = -1;
+      invalidate();
+    });
+    return () => { cancelled = true; };
+  }, [invalidate]);
 
   useGSAP(() => {
     if (!globalContainerRef.current || !lidHingeGroupRef.current) return;
 
+    const mobileFrameZ = () => {
+      const aspect =
+        sizeRef.current.width / Math.max(1, sizeRef.current.height);
+      return mobile ? Math.max(6.5, 5 / aspect) : 6.5;
+    };
+    const entryX = mobile ? 0 : 1.7;
+    const entryY = mobile ? -4.8 : 0;
+    globalContainerRef.current.position.set(entryX, entryY, 0);
+    camera.position.z = mobileFrameZ();
     lidHingeGroupRef.current.rotation.x = 1.7285;
 
     /* Hero scrub timeline, keyed to #hero scroll progress 0→1:
-         0     – 0.267  entry — lid opens, laptop swings/slides into frame
+         0     – 0.267  entry — the device rotates/slides into frame
          0.27  – 0.62   boot — spinner, then header bitmap fades in on the
                          virtual screen (see drawBootScreen phases)
-         0.62  – 0.9667 dolly — camera zooms/pans to the cover-framed screen
-         0.9667– 1.0    matched window — camera drifts the remaining
-                         MATCH_WINDOW_VH so the on-screen capture translates
-                         up at exactly 1:1 with scroll, pixel-locked to the
-                         real Projects header rising beneath it; the opacity
-                         dissolve spans this same window, crossfading two
-                         identical, identically-moving images. */
+         0.62  – 0.9667 dolly — zoom to the device, framed to the viewport
+         0.9667– 1.0    matched window — the live Projects header aligns with
+                         the phone preview, then expands into the page. */
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: "#hero",
@@ -323,8 +493,14 @@ function LaptopScene({
     );
     tl.fromTo(
       globalContainerRef.current.position,
-      { x: 1.7 },
+      { x: entryX },
       { x: 0, duration: 0.267, ease: "power2.inOut" },
+      0
+    );
+    tl.fromTo(
+      globalContainerRef.current.position,
+      { y: entryY },
+      { y: mobile ? -0.8 : 0, duration: 0.267, ease: "power2.inOut" },
       0
     );
     tl.fromTo(
@@ -334,20 +510,28 @@ function LaptopScene({
       0
     );
     const FACE_CY      = 0.6879;
-    const FACE_FRONT_Z = -0.8689;
-    const FACE_HALF_W  = 1.4766;
-    const FACE_HALF_H  = 0.9485;
+    const FACE_FRONT_Z = mobile ? -0.8509 : -0.8689;
+    const FACE_HALF_W  = mobile ? 0.6 : 1.4766;
+    const FACE_HALF_H  = mobile ? 1.3 : 0.9485;
+    // The final phone tilt shifts its projected bounds; offset it back to center.
+    const mobileScreenY =
+      (mobile ? -0.8 : 0) +
+      FACE_CY * Math.cos(0.1577) -
+      FACE_FRONT_Z * Math.sin(0.1577) +
+      (mobile ? 0.085 : 0);
     const coverZ = () => {
       const t      = Math.tan(THREE.MathUtils.degToRad(45 / 2));
       const aspect = sizeRef.current.width / Math.max(1, sizeRef.current.height);
-      const d = Math.min(FACE_HALF_H / t, FACE_HALF_W / (aspect * t)) * COVER_OVERSHOOT;
+      const heightDistance = FACE_HALF_H / t;
+      const widthDistance = FACE_HALF_W / (aspect * t);
+      const d = mobile
+        ? Math.max(heightDistance, widthDistance) / 0.9
+        : Math.min(heightDistance, widthDistance) * COVER_OVERSHOOT;
       return FACE_FRONT_Z + d;
     };
     /* World-units of ONE viewport-height at the screen plane when the camera
-       sits at coverZ — converts scroll vh into camera-Y drift so the on-screen
-       capture can translate up at exactly 1:1 with the page during the
-       matched handoff window. Function-based (invalidateOnRefresh re-evaluates
-       on resize), like coverZ. */
+       sits at coverZ. The desktop handoff uses this to match camera drift to
+       page scroll; function-based values are re-evaluated on resize. */
     const vhWorld = () => {
       const dist = coverZ() - FACE_FRONT_Z;
       return 2 * dist * Math.tan(THREE.MathUtils.degToRad(45 / 2));
@@ -356,8 +540,12 @@ function LaptopScene({
        at the swap). */
     tl.fromTo(
       camera.position,
-      { z: 6.5 },
-      { z: coverZ, duration: 0.3467, ease: "power2.inOut" },
+      { z: mobileFrameZ },
+      {
+        z: coverZ,
+        duration: 0.3467,
+        ease: mobile ? "power2.out" : "power2.inOut",
+      },
       0.62
     );
     /* y: rises on power1.in (t²) — zero velocity at onset, and its END velocity
@@ -370,7 +558,12 @@ function LaptopScene({
     tl.fromTo(
       camera.position,
       { y: 0 },
-      { y: () => FACE_CY + (MATCH_WINDOW_VH / 100) * vhWorld(), duration: 0.3467, ease: "power1.in" },
+      {
+        y: () =>
+          mobile ? mobileScreenY : FACE_CY + (MATCH_WINDOW_VH / 100) * vhWorld(),
+        duration: 0.3467,
+        ease: "power1.in",
+      },
       0.62
     );
     tl.fromTo(
@@ -379,33 +572,152 @@ function LaptopScene({
       { x: 0, y: 0, z: 0, duration: 0.3467, ease: "power2.inOut" },
       0.62
     );
-    /* Matched segment: content translates up MATCH_WINDOW_VH over
-       MATCH_WINDOW_VH of scroll, 1:1 with the page. Linear (ease: "none") so
-       the camera's velocity — and thus the on-screen capture's velocity —
-       exactly matches the page's scroll velocity for the whole window. */
-    tl.to(
-      camera.position,
-      { y: FACE_CY, duration: 0.0333, ease: "none" },
-      0.9667
-    );
+    if (!mobile) {
+      tl.fromTo(
+        camera.position,
+        { y: 0 },
+        { y: FACE_CY, duration: 0.0333, ease: "none" },
+        0.9667
+      );
+    }
 
     const layerEl     = canvasWrapperDOMRef.current?.closest<HTMLElement>(".hero-3d-layer");
     const projectsEl  = portfolioSectionRef?.current;
     if (layerEl && projectsEl && canvasWrapperDOMRef.current) {
-      /* Raise the fixed canvas above the incoming stack before any overlap
-         (projects enters the viewport at progress ≈ 0.667). Scrub .set()s
-         revert automatically when the playhead crosses back — this replaces
-         fadeTl's four imperative onEnter/onLeave zIndex callbacks. */
+      let mobileHeaderAligned = false;
+      if (mobile) {
+        const mobileHeader =
+          projectsEl.querySelector<HTMLElement>(".sd-header .ed-header");
+        const mobileHeading =
+          mobileHeader?.querySelector<HTMLElement>(".ed-heading");
+        const hero = document.querySelector<HTMLElement>("#hero");
+
+        if (mobileHeader && mobileHeading && hero) {
+          const framingCamera = camera.clone();
+          framingCamera.position.set(0, mobileScreenY, coverZ());
+          framingCamera.rotation.set(0, 0, 0);
+          framingCamera.updateMatrixWorld(true);
+
+          const screenRotation = new THREE.Euler(0.1577, 0, 0);
+          const screenHalfWidth = 0.51;
+          const screenHalfHeight = 1.1;
+          const projectedCorners = [-screenHalfWidth, screenHalfWidth].flatMap((x) =>
+            [-screenHalfHeight, screenHalfHeight].map((y) => {
+              const point = new THREE.Vector3(x, FACE_CY + y, FACE_FRONT_Z)
+                .applyEuler(screenRotation);
+              point.y -= 0.8;
+              point.project(framingCamera);
+              return {
+                x: ((point.x + 1) / 2) * sizeRef.current.width,
+                y: ((1 - point.y) / 2) * sizeRef.current.height,
+              };
+            }),
+          );
+          const screenLeft = Math.min(...projectedCorners.map(({ x }) => x));
+          const screenRight = Math.max(...projectedCorners.map(({ x }) => x));
+          const screenTop = Math.min(...projectedCorners.map(({ y }) => y));
+          const screenBottom = Math.max(...projectedCorners.map(({ y }) => y));
+          const screenWidth = screenRight - screenLeft;
+          const screenHeight = screenBottom - screenTop;
+          const scaleX = screenWidth / MOBILE_CAPTURE_WIDTH;
+          const scaleY = screenHeight / MOBILE_CAPTURE_HEIGHT;
+          // Project the heading anchor directly; affine scaling misses the
+          // perspective shift across the tilted screen.
+          const headingPoint = new THREE.Vector3(
+            -screenHalfWidth +
+              (MOBILE_CAPTURE_HEADING_X / MOBILE_CAPTURE_WIDTH) *
+                screenHalfWidth *
+                2,
+            FACE_CY +
+              screenHalfHeight -
+              (MOBILE_CAPTURE_HEADING_Y / MOBILE_CAPTURE_HEIGHT) *
+                screenHalfHeight *
+                2,
+            FACE_FRONT_Z,
+          )
+            .applyEuler(screenRotation);
+          headingPoint.y -= 0.8;
+          headingPoint.project(framingCamera);
+          const targetX = ((headingPoint.x + 1) / 2) * sizeRef.current.width;
+          const targetY = ((1 - headingPoint.y) / 2) * sizeRef.current.height;
+
+          const headerRect = mobileHeader.getBoundingClientRect();
+          const headingRect = mobileHeading.getBoundingClientRect();
+          const headerTransform = getComputedStyle(mobileHeader).transform;
+          const headerMatrix =
+            headerTransform === "none"
+              ? new DOMMatrixReadOnly()
+              : new DOMMatrixReadOnly(headerTransform);
+          const headerDocumentTop =
+            headerRect.top + window.scrollY - headerMatrix.m42;
+          const headingOffsetX = headingRect.left - headerRect.left;
+          const headingOffsetY = headingRect.top - headerRect.top;
+          const trigger = scrollTriggerRef.current;
+          const heroEndY =
+            trigger && trigger.end > trigger.start
+              ? trigger.end
+              : hero.getBoundingClientRect().bottom + window.scrollY;
+          const handoffDistance =
+            (MATCH_WINDOW_VH / 100) * sizeRef.current.height;
+          const headerTopAtStart =
+            headerDocumentTop - heroEndY + handoffDistance;
+          const startX =
+            targetX -
+            (headerRect.left - headerMatrix.m41) -
+            headingOffsetX * scaleX;
+          const startY =
+            targetY - headerTopAtStart - headingOffsetY * scaleY;
+
+          tl.set(
+            mobileHeader,
+            {
+              transformOrigin: "top left",
+              x: startX,
+              y: startY,
+              scaleX,
+              scaleY,
+            },
+            0.9667,
+          );
+          tl.to(
+            mobileHeader,
+            {
+              y: startY + handoffDistance / 2,
+              ease: "none",
+              duration: 0.0167,
+            },
+            0.9667,
+          );
+          tl.to(
+            mobileHeader,
+            {
+              x: 0,
+              y: 0,
+              scaleX: 1,
+              scaleY: 1,
+              ease: "none",
+              duration: 0.0166,
+            },
+            0.9834,
+          );
+          mobileHeaderAligned = true;
+        }
+      }
+
+      /* Raise the screen above the incoming section, then crossfade it into
+         Selected Work during the final, scroll-matched window. */
       tl.set(layerEl, { zIndex: 30 }, 0.62);
-      /* The real header must sit beneath the screen for the whole matched
-         window (0.9667–1.0), not just the dissolve tail — it's what the
-         screen capture is pixel-locked against as both translate up. */
       tl.set(projectsEl, { opacity: 1, pointerEvents: "auto" }, 0.9667);
-      /* The dissolve: spans the matched window exactly, crossfading two
-         identical, identically-moving images — the screen capture and the
-         real projects header are pixel-aligned and co-moving throughout. */
-      tl.to(layerEl, { opacity: 0, ease: "none", duration: 0.0333 }, 0.9667);
-      /* Keep the shared Canvas mounted after the handoff. The laptop group is
+      tl.to(
+        layerEl,
+        {
+          opacity: 0,
+          ease: "none",
+          duration: mobileHeaderAligned ? 0.0167 : 0.0333,
+        },
+        0.9667,
+      );
+      /* Keep the shared Canvas mounted after the handoff. The device group is
          parked below, while the same renderer remains available for the
          About → Contact burn without allocating a second context. */
     }
@@ -417,7 +729,7 @@ function LaptopScene({
     /* revertOnUpdate kills the previous timelines/ScrollTriggers before any
        re-run — @gsap/react's default (revert on unmount only) leaks them in
        this never-unmounting component. */
-    dependencies: [camera, canvasWrapperDOMRef, portfolioSectionRef, invalidate, onReady],
+    dependencies: [camera, canvasWrapperDOMRef, portfolioSectionRef, invalidate, mobile, onReady],
     revertOnUpdate: true,
   });
 
@@ -457,8 +769,9 @@ function LaptopScene({
         boot.ctx,
         progress,
         state.clock.elapsedTime,
-        bgImage,
+        mobile ? bgMobileImage ?? bgImage : bgImage,
         prefersReduced,
+        mobile,
       );
       boot.tex.needsUpdate = true;
     }
@@ -466,7 +779,7 @@ function LaptopScene({
     // Keep scheduling frames while a time- or scrub-driven animation is still
     // running. The scrub demand window is tied to the scrub tween's actual
     // activity (not a fixed timeout, which under-shoots the ease tail and stalls
-    // the lid-open just short of complete); a small grace covers update jitter.
+    // the device entry just short of complete); a small grace covers update jitter.
     const scrubTween = scrollTriggerRef.current?.getTween?.();
     const inScrubTail =
       (scrubTween ? scrubTween.isActive() : false) ||
@@ -528,15 +841,16 @@ function LaptopScene({
     <group ref={parallaxGroupRef}>
       <group
         ref={globalContainerRef}
-        position={[1.7, 0, 0]}
+        position={mobile ? [0, -4.8, 0] : [1.7, 0, 0]}
         rotation={[0.18, -0.35, 0.05]}
       >
-        <group scale={[10, 10, 10]} position={[0, -0.65, 0]}>
-          <primitive object={nodes.Base_Chassis} />
-          <group ref={lidHingeGroupRef} position={[0, 0.008614, -0.10311]}>
-            <primitive object={nodes.Lid_Screen} position={[0, -0.008614, 0.10311]} />
+        {mobile ? (
+          <group ref={lidHingeGroupRef}>
+            <SmartphoneModel screenTexture={boot.tex} />
           </group>
-        </group>
+        ) : (
+          <LaptopModel screenTexture={boot.tex} hingeRef={lidHingeGroupRef} />
+        )}
       </group>
     </group>
   );
@@ -566,13 +880,15 @@ class WebGLBoundary extends Component<
 
 export interface InteractiveModelProps {
   portfolioSectionRef?: React.RefObject<HTMLElement | null>;
-  renderLaptop?: boolean;
+  renderDevice?: boolean;
+  mobile?: boolean;
   onFail?: () => void;
 }
 
 export default function InteractiveModel({
   portfolioSectionRef,
-  renderLaptop = true,
+  renderDevice = true,
+  mobile = false,
   onFail,
 }: InteractiveModelProps) {
   const canvasWrapperDOMRef = useRef<HTMLDivElement>(null);
@@ -620,13 +936,13 @@ export default function InteractiveModel({
     const timeoutId = window.setTimeout(() => {
       if (
         !createdRef.current ||
-        (renderLaptop && !sceneReadyRef.current)
+        (renderDevice && !sceneReadyRef.current)
       ) {
         revealFallback();
       }
     }, 10000);
     return () => window.clearTimeout(timeoutId);
-  }, [renderLaptop, revealFallback]);
+  }, [renderDevice, revealFallback]);
 
   useEffect(() => () => {
     const canvas = contextCanvasRef.current;
@@ -665,7 +981,7 @@ export default function InteractiveModel({
         onCreated={({ gl }) => {
           createdRef.current = true;
           gl.setClearAlpha(0);
-          if (!renderLaptop) sceneReadyRef.current = true;
+          if (!renderDevice) sceneReadyRef.current = true;
           loaderControls.markStageReady();
           const previousCanvas = contextCanvasRef.current;
           const previousHandler = contextLostRef.current;
@@ -682,7 +998,7 @@ export default function InteractiveModel({
           contextLostRef.current = handleContextLoss;
         }}
       >
-        {renderLaptop && (
+        {renderDevice && (
           <PerformanceMonitor
             flipflops={3}
             onIncline={() => {
@@ -702,7 +1018,7 @@ export default function InteractiveModel({
             frames when nobody calls invalidate(). When hero is offscreen the
             ScrollTrigger stops firing onUpdate → no invalidate → no frames. */}
 
-        {renderLaptop && (
+        {renderDevice && (
           <>
             <ambientLight intensity={degraded ? 2.2 : 1.5} />
             <directionalLight position={[8, 12, 6]} intensity={2.2} />
@@ -711,7 +1027,7 @@ export default function InteractiveModel({
           </>
         )}
 
-        {renderLaptop && !degraded && (
+        {renderDevice && !degraded && (
           <Environment resolution={quality.environmentResolution} background={false}>
             <Lightformer intensity={0.8} position={[3, 3, 4]} scale={[6, 6, 1]} color="#eef2f4" />
             <Lightformer intensity={0.4} position={[-4, 2, -3]} scale={[5, 5, 1]} color="#9fb4d8" />
@@ -719,11 +1035,12 @@ export default function InteractiveModel({
           </Environment>
         )}
 
-        {renderLaptop && (
+        {renderDevice && (
           <Suspense fallback={null}>
-            <LaptopScene
+            <DeviceScene
               canvasWrapperDOMRef={canvasWrapperDOMRef}
               portfolioSectionRef={portfolioSectionRef}
+              mobile={mobile}
               lowPerf={degraded}
               parallaxScale={degraded ? 0 : quality.parallaxScale}
               onReady={markSceneReady}

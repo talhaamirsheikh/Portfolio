@@ -24,13 +24,10 @@ import { resolveMotionEnvironment } from "../lib/motionEnvironment";
    │ LOAD-BEARING ARCHITECTURAL ASSUMPTION — DO NOT BREAK         │
    │                                                              │
    │ useProgress reads THREE.DefaultLoadingManager, which is      │
-   │ GLOBAL, not per-Canvas. This loader only sees the heavy      │
-   │ assets (hardware_laptop.glb + keyboard texture + bg.jpg)     │
-   │ because the main 3D scene (InteractiveModel) mounts          │
-   │ CONCURRENTLY as a sibling underneath this overlay in         │
-   │ app/page.tsx, loading via useGLTF/useTexture (bg.jpg via a   │
-   │ bare THREE.ImageLoader — CPU-only, never GPU-sampled) into   │
-   │ that same global manager.                                    │
+   │ GLOBAL, not per-Canvas. On desktop this loader sees the      │
+   │ hardware_laptop.glb, keyboard texture, and screen capture    │
+   │ because InteractiveModel mounts alongside this overlay and   │
+   │ loads them through that same global manager.                 │
    │                                                              │
    │ If the 3D scene is ever lazy-mounted AFTER the preloader     │
    │ finishes, useProgress sees nothing, the manifest stays       │
@@ -60,14 +57,13 @@ const HERO_HANDOFF_AT = 0.4; // fire onComplete at 40% of the burn (curtain-midp
 const READY_LINE = "> SYSTEM READY. [OK]";
 
 /* ── Mobile (coarse-pointer / non-desktopScrub) boot sequence ──
-   The WebGL stage never mounts on these paths, so there is no real asset
-   manifest to gate on — waiting for one is the known FAILSAFE_MS hang trap.
-   This sequence is purely time-based: a fixed set of lines typed out over
-   MOBILE_BOOT_MS, then a plain DOM fade (no shader burn, no canvas). */
+   The mobile stage uses procedural phone geometry and has no model manifest
+   to gate on. This sequence is purely time-based: fixed status lines typed
+   over MOBILE_BOOT_MS, then a plain DOM fade (no shader burn). */
 const MOBILE_BOOT_LINES = [
-  "> FETCHING: hardware_laptop.glb ... [OK]",
-  "> FETCHING: Mac Keyboard.jpg ... [OK]",
-  "> FETCHING: bg.jpg ... [OK]",
+  "> BUILDING: smartphone scene ... [OK]",
+  "> PREPARING: portrait display ... [OK]",
+  "> LOADING: Selected Work screen ... [OK]",
   READY_LINE,
 ];
 const MOBILE_BOOT_MS = 1700;   // synthetic progress ceiling (~1.6-2s to "100%")
@@ -344,19 +340,16 @@ export default function PreLoader({ onComplete }: PreLoaderProps) {
   const staticFallback =
     environment.reducedMotion ||
     environment.coarsePointer ||
-    /* Must mirror HeroSection's mountVisualStage: when the stage doesn't
-       mount (sub-768 windows, or the 768-899 scrub-without-canvas band),
-       the full pipeline's asset gate has nothing to wait on and would
-       hang to FAILSAFE_MS. */
+    /* Keep touch and non-immersive tiers on the bounded terminal boot instead
+       of waiting for the desktop visual-stage asset gate. The mobile laptop
+       canvas may mount independently after the loader exits. */
     !environment.desktopScrub ||
     !environment.stageViewport ||
     !environment.webglAvailable ||
     loaderSnapshot.failed;
-  /* The tiers that take staticFallback purely because the WebGL stage
-     doesn't mount (touch devices, sub-768 windows, the 768-899
-     scrub-without-canvas band) — not because motion is unwanted or
-     something failed. These get a smooth terminal boot instead of the
-     quick flash below. */
+  /* The tiers that use the terminal boot by design (touch devices and
+     non-immersive widths) get a bounded transition instead of waiting for
+     the desktop asset gate. */
   const mobileTerminalBoot =
     (!environment.desktopScrub || !environment.stageViewport) &&
     !environment.reducedMotion &&

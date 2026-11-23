@@ -219,6 +219,90 @@ test("desktop-to-mobile resize clears magnetic hero glyph offsets", async ({ pag
   ).toEqual([]);
 });
 
+test("mobile renders the scroll-scrubbed smartphone when WebGL is available", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-390");
+  await openPortfolio(page);
+
+  const webglAvailable = await page.evaluate(() => {
+    const probe = (globalThis as typeof globalThis & {
+      __PORTFOLIO_WEBGL_PROBE__?: { available: boolean };
+    }).__PORTFOLIO_WEBGL_PROBE__;
+    return probe?.available ?? false;
+  });
+  const stageCanvas = page.locator(".hero-3d-layer canvas");
+  const phonePoster = page.locator(".hero-phone-poster");
+  const laptopPoster = page.locator(".hero-laptop-poster");
+
+  if (webglAvailable) {
+    await expect
+      .poll(async () =>
+        (await stageCanvas.count()) +
+        (await phonePoster.count()),
+      )
+      .toBeGreaterThan(0);
+    if (await stageCanvas.count()) {
+      await expect(stageCanvas).toHaveCount(1);
+      await expect(page.locator(".hero-3d-layer")).toBeVisible();
+      await expect(page.locator(".hero-3d-layer")).toHaveAttribute(
+        "data-device",
+        "smartphone",
+      );
+      await expect(laptopPoster).toHaveCount(0);
+      await expect
+        .poll(() =>
+          page.evaluate(() =>
+            performance
+              .getEntriesByName(
+                `${window.location.origin}/assets/textures/bg-mobile.jpg`,
+              )
+              .some(
+                (entry) =>
+                  (entry as PerformanceResourceTiming).responseEnd > 0,
+              ),
+          ),
+        )
+        .toBe(true);
+      const runwayHeight = await page.locator("#hero").evaluate((hero) =>
+        hero.getBoundingClientRect().height,
+      );
+      const viewportHeight = await page.evaluate(() => window.innerHeight);
+      expect(runwayHeight).toBeGreaterThan(viewportHeight * 2);
+
+      await page.evaluate((height) => window.scrollTo(0, height * 0.945), runwayHeight);
+      await expect(page.locator("#projects")).toHaveCSS("opacity", "0");
+
+      await page.evaluate((height) => window.scrollTo(0, height * 0.975), runwayHeight);
+      await expect(page.locator("#projects")).toHaveCSS("opacity", "1");
+      const headingPosition = await page
+        .locator("#projects .sd-header .ed-heading")
+        .evaluate((heading) => {
+          const rect = heading.getBoundingClientRect();
+          return { x: rect.x, y: rect.y };
+        });
+      expect(Math.abs(headingPosition.x - 54.4)).toBeLessThan(2);
+      expect(Math.abs(headingPosition.y - 196.6)).toBeLessThan(2);
+
+      await page.evaluate((height) => window.scrollTo(0, height * 0.99), runwayHeight);
+      await expect(page.locator("#projects")).toHaveCSS("opacity", "1");
+      await expect
+        .poll(() =>
+          page.locator(".hero-3d-layer").evaluate((layer) =>
+            Number.parseFloat(getComputedStyle(layer).opacity),
+          ),
+        )
+        .toBeLessThan(0.5);
+      await expect(page.locator("#projects .sd-header .ed-header")).toBeVisible();
+    } else {
+      await expect(phonePoster).toBeVisible();
+      await expect(laptopPoster).toHaveCount(0);
+    }
+  } else {
+    await expect(stageCanvas).toHaveCount(0);
+    await expect(phonePoster).toBeVisible();
+    await expect(laptopPoster).toHaveCount(0);
+  }
+});
+
 test("desktop chapter landings and project rail stay inside the readable viewport", async ({ page }, testInfo) => {
   test.skip(!DESKTOP_PROJECTS.has(testInfo.project.name));
   await openPortfolio(page);

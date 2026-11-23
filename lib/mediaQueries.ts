@@ -10,7 +10,7 @@ export const IMMERSIVE_SCROLL_MEDIA_QUERY =
 export const TOUCH_MEDIA_QUERY =
   "(max-width: 767px), (hover: none), (pointer: coarse)";
 
-/* The 3D canvas visibility floor — must stay in sync with the CSS that
-   hides .hero-3d-layer/.visual-stage below 900px (globals.css
-   min-width:900 blocks, evolution.css max-width:900 block). */
+/* Desktop 3D canvas visibility floor — must stay in sync with the CSS that
+   hides .visual-stage below 900px. Coarse-pointer laptop stages use a
+   separate responsive path and do not depend on this floor. */
 export const STAGE_VIEWPORT_MEDIA_QUERY = "(min-width: 900px)";
