@@ -230,37 +230,37 @@ function SmartphoneModel({ screenTexture }: { screenTexture: THREE.Texture }) {
   return (
     <group position={[0, 0.6879, 0]}>
       <RoundedBox
-        args={[1.2, 2.6, 0.14]}
-        radius={0.12}
-        smoothness={6}
+        args={[1.22, 2.62, 0.15]}
+        radius={0.16}
+        smoothness={8}
         position={[0, 0, -0.9389]}
         castShadow
         receiveShadow
       >
         <meshPhysicalMaterial
-          color="#f1f2f3"
-          metalness={0.72}
-          roughness={0.24}
+          color="#b9a98e"
+          metalness={0.82}
+          roughness={0.2}
           clearcoat={0.9}
-          clearcoatRoughness={0.16}
+          clearcoatRoughness={0.12}
         />
       </RoundedBox>
       <RoundedBox
-        args={[1.12, 2.4, 0.012]}
-        radius={0.1}
-        smoothness={6}
-        position={[0, 0, -0.8599]}
+        args={[1.15, 2.51, 0.018]}
+        radius={0.135}
+        smoothness={8}
+        position={[0, 0, -0.8569]}
       >
         <meshPhysicalMaterial
-          color="#06070a"
-          metalness={0.18}
-          roughness={0.14}
+          color="#020306"
+          metalness={0.12}
+          roughness={0.1}
           clearcoat={1}
-          clearcoatRoughness={0.08}
+          clearcoatRoughness={0.04}
         />
       </RoundedBox>
-      <mesh position={[0, 0, -0.8509]}>
-        <planeGeometry args={[1.02, 2.2]} />
+      <mesh position={[0, 0, -0.8449]}>
+        <planeGeometry args={[1.065, 2.31]} />
         <meshBasicMaterial
           map={screenTexture}
           toneMapped={false}
@@ -268,71 +268,93 @@ function SmartphoneModel({ screenTexture }: { screenTexture: THREE.Texture }) {
         />
       </mesh>
       <RoundedBox
-        args={[0.26, 0.065, 0.012]}
-        radius={0.032}
-        smoothness={6}
-        position={[0, 1.105, -0.8439]}
+        args={[0.3, 0.072, 0.014]}
+        radius={0.036}
+        smoothness={8}
+        position={[0, 1.12, -0.8389]}
       >
-        <meshBasicMaterial color="#050608" />
+        <meshBasicMaterial color="#020305" />
       </RoundedBox>
-      <mesh position={[0.071, 1.105, -0.836]}>
-        <sphereGeometry args={[0.012, 16, 12]} />
+      <mesh position={[0.088, 1.12, -0.830]}>
+        <sphereGeometry args={[0.014, 20, 16]} />
         <meshPhysicalMaterial
-          color="#111827"
-          metalness={0.55}
-          roughness={0.18}
+          color="#18243a"
+          metalness={0.7}
+          roughness={0.12}
           clearcoat={1}
         />
       </mesh>
       <RoundedBox
-        args={[0.022, 0.28, 0.06]}
-        radius={0.01}
-        smoothness={4}
-        position={[-0.609, 0.62, -0.94]}
+        args={[0.025, 0.3, 0.065]}
+        radius={0.012}
+        smoothness={6}
+        position={[-0.62, 0.68, -0.94]}
       >
-        <meshStandardMaterial color="#d9dce0" metalness={0.82} roughness={0.22} />
+        <meshStandardMaterial color="#d9c8a9" metalness={0.9} roughness={0.18} />
       </RoundedBox>
       <RoundedBox
-        args={[0.022, 0.18, 0.06]}
-        radius={0.01}
-        smoothness={4}
-        position={[0.609, 0.72, -0.94]}
+        args={[0.025, 0.2, 0.065]}
+        radius={0.012}
+        smoothness={6}
+        position={[0.62, 0.7, -0.94]}
       >
-        <meshStandardMaterial color="#d9dce0" metalness={0.82} roughness={0.22} />
+        <meshStandardMaterial color="#d9c8a9" metalness={0.9} roughness={0.18} />
       </RoundedBox>
       <RoundedBox
-        args={[0.36, 0.4, 0.035]}
-        radius={0.07}
-        smoothness={5}
-        position={[-0.34, 0.94, -1.02]}
+        args={[0.025, 0.2, 0.065]}
+        radius={0.012}
+        smoothness={6}
+        position={[-0.62, 0.27, -0.94]}
       >
-        <meshPhysicalMaterial color="#e5e6e8" metalness={0.48} roughness={0.28} />
+        <meshStandardMaterial color="#d9c8a9" metalness={0.9} roughness={0.18} />
+      </RoundedBox>
+      <RoundedBox
+        args={[0.4, 0.43, 0.05]}
+        radius={0.085}
+        smoothness={8}
+        position={[-0.34, 0.96, -1.035]}
+      >
+        <meshPhysicalMaterial color="#c5b495" metalness={0.72} roughness={0.2} />
       </RoundedBox>
       {[
-        [-0.46, 1.03],
-        [-0.23, 1.03],
-        [-0.46, 0.82],
+        [-0.46, 1.055],
+        [-0.23, 1.055],
+        [-0.46, 0.835],
       ].map(([x, y]) => (
         <mesh
           key={`${x}-${y}`}
-          position={[x, y, -1.041]}
+          position={[x, y, -1.067]}
           rotation={[Math.PI / 2, 0, 0]}
         >
-          <cylinderGeometry args={[0.064, 0.064, 0.018, 24]} />
+          <cylinderGeometry args={[0.072, 0.072, 0.02, 32]} />
+          <meshStandardMaterial color="#d8c7a8" metalness={0.85} roughness={0.18} />
+        </mesh>
+      ))}
+      {[
+        [-0.46, 1.055],
+        [-0.23, 1.055],
+        [-0.46, 0.835],
+      ].map(([x, y]) => (
+        <mesh
+          key={`lens-${x}-${y}`}
+          position={[x, y, -1.081]}
+          rotation={[Math.PI / 2, 0, 0]}
+        >
+          <cylinderGeometry args={[0.058, 0.058, 0.02, 32]} />
           <meshPhysicalMaterial
-            color="#080b12"
-            metalness={0.52}
-            roughness={0.14}
+            color="#080d18"
+            metalness={0.68}
+            roughness={0.08}
             clearcoat={1}
           />
         </mesh>
       ))}
       <mesh
-        position={[-0.23, 0.82, -1.041]}
+        position={[-0.23, 0.835, -1.067]}
         rotation={[Math.PI / 2, 0, 0]}
       >
-        <cylinderGeometry args={[0.045, 0.045, 0.018, 24]} />
-        <meshPhysicalMaterial color="#11151d" metalness={0.35} roughness={0.2} />
+        <cylinderGeometry args={[0.026, 0.026, 0.02, 24]} />
+        <meshBasicMaterial color="#f3e7d0" />
       </mesh>
     </group>
   );
@@ -449,7 +471,7 @@ function DeviceScene({
       return mobile ? Math.max(6.5, 5 / aspect) : 6.5;
     };
     const entryX = mobile ? 0 : 1.7;
-    const entryY = mobile ? -4.8 : 0;
+    const entryY = mobile ? -6.8 : 0;
     globalContainerRef.current.position.set(entryX, entryY, 0);
     camera.position.z = mobileFrameZ();
     lidHingeGroupRef.current.rotation.x = 1.7285;
@@ -506,19 +528,24 @@ function DeviceScene({
     tl.fromTo(
       globalContainerRef.current.rotation,
       { x: 0.18, y: -0.35, z: 0.05 },
-      { x: 0.1577, y: 0, z: 0, duration: 0.267, ease: "power2.inOut" },
+      {
+        x: mobile ? 0 : 0.1577,
+        y: 0,
+        z: 0,
+        duration: 0.267,
+        ease: "power2.inOut",
+      },
       0
     );
     const FACE_CY      = 0.6879;
     const FACE_FRONT_Z = mobile ? -0.8509 : -0.8689;
     const FACE_HALF_W  = mobile ? 0.6 : 1.4766;
     const FACE_HALF_H  = mobile ? 1.3 : 0.9485;
-    // The final phone tilt shifts its projected bounds; offset it back to center.
+    const finalDeviceTilt = mobile ? 0 : 0.1577;
     const mobileScreenY =
       (mobile ? -0.8 : 0) +
-      FACE_CY * Math.cos(0.1577) -
-      FACE_FRONT_Z * Math.sin(0.1577) +
-      (mobile ? 0.085 : 0);
+      FACE_CY * Math.cos(finalDeviceTilt) -
+      FACE_FRONT_Z * Math.sin(finalDeviceTilt);
     const coverZ = () => {
       const t      = Math.tan(THREE.MathUtils.degToRad(45 / 2));
       const aspect = sizeRef.current.width / Math.max(1, sizeRef.current.height);
@@ -598,9 +625,9 @@ function DeviceScene({
           framingCamera.rotation.set(0, 0, 0);
           framingCamera.updateMatrixWorld(true);
 
-          const screenRotation = new THREE.Euler(0.1577, 0, 0);
-          const screenHalfWidth = 0.51;
-          const screenHalfHeight = 1.1;
+          const screenRotation = new THREE.Euler(finalDeviceTilt, 0, 0);
+          const screenHalfWidth = 0.5325;
+          const screenHalfHeight = 1.155;
           const projectedCorners = [-screenHalfWidth, screenHalfWidth].flatMap((x) =>
             [-screenHalfHeight, screenHalfHeight].map((y) => {
               const point = new THREE.Vector3(x, FACE_CY + y, FACE_FRONT_Z)
@@ -661,6 +688,25 @@ function DeviceScene({
             (MATCH_WINDOW_VH / 100) * sizeRef.current.height;
           const headerTopAtStart =
             headerDocumentTop - heroEndY + handoffDistance;
+          const projectsRect = projectsEl.getBoundingClientRect();
+          const projectsDocumentTop = projectsRect.top + window.scrollY;
+          const projectsHeight = projectsEl.offsetHeight;
+          const clipRadius = Math.min(screenWidth, screenHeight) * 0.075;
+          const scrollStart =
+            trigger?.start ?? hero.getBoundingClientRect().top + window.scrollY;
+          const scrollEnd =
+            trigger && trigger.end > trigger.start ? trigger.end : heroEndY;
+          const screenClipAt = (progress: number) => {
+            const scrollY =
+              scrollStart + (scrollEnd - scrollStart) * progress;
+            const sectionTop = projectsDocumentTop - scrollY;
+            const top = screenTop - sectionTop;
+            const right = projectsRect.right - screenRight;
+            const bottom =
+              projectsHeight - (screenBottom - sectionTop);
+            const left = screenLeft - projectsRect.left;
+            return `inset(${top}px ${right}px ${bottom}px ${left}px round ${clipRadius}px)`;
+          };
           const startX =
             targetX -
             (headerRect.left - headerMatrix.m41) -
@@ -679,6 +725,26 @@ function DeviceScene({
             },
             0.9667,
           );
+          tl.set(projectsEl, { clipPath: screenClipAt(0.9667) }, 0.9667);
+          tl.to(
+            projectsEl,
+            {
+              clipPath: screenClipAt(0.9834),
+              ease: "none",
+              duration: 0.0167,
+            },
+            0.9667,
+          );
+          tl.to(
+            projectsEl,
+            {
+              clipPath: "inset(0px)",
+              ease: "none",
+              duration: 0.0166,
+            },
+            0.9834,
+          );
+          tl.set(projectsEl, { clearProps: "clipPath" }, 1.0);
           tl.to(
             mobileHeader,
             {
@@ -721,7 +787,15 @@ function DeviceScene({
          parked below, while the same renderer remains available for the
          About → Contact burn without allocating a second context. */
     }
-    tl.set(globalContainerRef.current, { visible: false }, 1.0);
+    if (mobile) {
+      tl.to(
+        globalContainerRef.current.position,
+        { y: entryY, duration: 0.0166, ease: "none" },
+        0.9834,
+      );
+    } else {
+      tl.set(globalContainerRef.current, { visible: false }, 1.0);
+    }
 
     onReady();
 

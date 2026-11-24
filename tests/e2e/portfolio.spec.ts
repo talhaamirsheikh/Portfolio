@@ -273,14 +273,15 @@ test("mobile renders the scroll-scrubbed smartphone when WebGL is available", as
 
       await page.evaluate((height) => window.scrollTo(0, height * 0.975), runwayHeight);
       await expect(page.locator("#projects")).toHaveCSS("opacity", "1");
+      await expect(page.locator("#projects")).not.toHaveCSS("clip-path", "none");
       const headingPosition = await page
         .locator("#projects .sd-header .ed-heading")
         .evaluate((heading) => {
           const rect = heading.getBoundingClientRect();
           return { x: rect.x, y: rect.y };
         });
-      expect(Math.abs(headingPosition.x - 54.4)).toBeLessThan(2);
-      expect(Math.abs(headingPosition.y - 196.6)).toBeLessThan(2);
+      expect(Math.abs(headingPosition.x - 58.6)).toBeLessThan(2);
+      expect(Math.abs(headingPosition.y - 172.8)).toBeLessThan(2);
 
       await page.evaluate((height) => window.scrollTo(0, height * 0.99), runwayHeight);
       await expect(page.locator("#projects")).toHaveCSS("opacity", "1");
@@ -292,6 +293,16 @@ test("mobile renders the scroll-scrubbed smartphone when WebGL is available", as
         )
         .toBeLessThan(0.5);
       await expect(page.locator("#projects .sd-header .ed-header")).toBeVisible();
+
+      await page.evaluate((height) => window.scrollTo(0, height * 1.01), runwayHeight);
+      await expect(page.locator("#projects .sd-header .ed-header")).toBeVisible();
+      await expect(page.locator(".hero-3d-layer")).toHaveCSS("opacity", "0");
+      await expect(page.locator("#projects")).toHaveCSS("clip-path", "none");
+
+      await page.evaluate((height) => window.scrollTo(0, height * 0.99), runwayHeight);
+      await expect(page.locator("#projects .sd-header .ed-header")).toBeVisible();
+      await expect(page.locator(".hero-3d-layer")).toHaveCSS("opacity", "0");
+      await expect(page.locator("#projects")).not.toHaveCSS("clip-path", "none");
     } else {
       await expect(phonePoster).toBeVisible();
       await expect(laptopPoster).toHaveCount(0);
