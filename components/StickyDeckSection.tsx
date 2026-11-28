@@ -359,7 +359,10 @@ function Lightbox({ images, alts, title, hue, start, onClose }: LightboxState & 
       <div
         ref={stageRef}
         className={`cs-lightbox-stage${zoomed ? " is-zoomed" : ""}${dragging ? " is-dragging" : ""}`}
-        style={{ "--card-hue": hue } as React.CSSProperties}
+        style={{
+          "--card-hue": hue,
+          "--card-hue-angle": hue.split(",")[0],
+        } as React.CSSProperties}
         onClick={(e) => e.stopPropagation()}
         onDoubleClick={(e) => {
           e.stopPropagation();
@@ -593,7 +596,10 @@ function ProjectSlide({ project, index, hue, eager, active, scrubActive, onOpen 
       className="cs-slide"
       data-project-id={project.id}
       data-cursor-label={project.title}
-      style={{ "--card-hue": hue } as React.CSSProperties}
+      style={{
+        "--card-hue": hue,
+        "--card-hue-angle": hue.split(",")[0],
+      } as React.CSSProperties}
       aria-label={`Project: ${project.title}`}
       aria-hidden={scrubActive && !active}
       inert={scrubActive && !active ? true : undefined}
@@ -609,7 +615,6 @@ function ProjectSlide({ project, index, hue, eager, active, scrubActive, onOpen 
               {pipeline ? (
                 <div
                   className="sd-pipeline"
-                  style={{ background: `hsl(${hue.split(",")[0]}, 15%, 8%)` }}
                   aria-label="Processing pipeline"
                 >
                   {pipeline.map((step, si, arr) => (
@@ -628,7 +633,6 @@ function ProjectSlide({ project, index, hue, eager, active, scrubActive, onOpen 
               ) : (
                 <div
                   className="sd-placeholder"
-                  style={{ background: `hsl(${hue.split(",")[0]}, 12%, 8%)` }}
                   aria-hidden="true"
                 >
                   <span className="sd-placeholder-label mono">{project.title.toUpperCase()}</span>
@@ -642,7 +646,7 @@ function ProjectSlide({ project, index, hue, eager, active, scrubActive, onOpen 
       {/* RIGHT — copy */}
       <div className="cs-text">
         <h3 className="cs-title">{project.title}</h3>
-        <span className="cs-subtitle" style={{ color: `hsl(${hue})` }}>
+        <span className="cs-subtitle">
           {project.subtitle}
         </span>
         <p className="cs-metric mono">{metric}</p>

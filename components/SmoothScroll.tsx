@@ -31,6 +31,7 @@ export default function SmoothScroll({
     });
 
     setLenis(lenis);
+    (window as unknown as { __lenis?: Lenis }).__lenis = lenis;
     lenis.on("scroll", ScrollTrigger.update);
     const tickerFn = (time: number) => {
       lenis.raf(time * 1000);

@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import { preload } from "react-dom";
 import { Plus_Jakarta_Sans, JetBrains_Mono, Instrument_Serif } from "next/font/google";
 import SmoothScroll from "../components/SmoothScroll";
@@ -8,6 +7,7 @@ import MemProbe from "../components/MemProbe";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
+import Script from "next/script";
 import "./evolution.css";
 
 // Absolute-URL base for canonical links, OG/Twitter images, and the sitemap.
@@ -73,7 +73,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#0D0B09",
-  colorScheme: "dark",
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({
@@ -97,12 +97,25 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${plusJakartaSans.variable} ${jetbrainsMono.variable} ${instrumentSerif.variable}`}
+      suppressHydrationWarning
     >
+      <head>
+        <Script
+          id="theme-preference"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `try{var savedTheme=localStorage.getItem("portfolio-theme");if(savedTheme==="light"||savedTheme==="dark"){document.documentElement.dataset.theme=savedTheme;var meta=document.querySelector('meta[name=\"theme-color\"]');if(meta)meta.setAttribute("content",savedTheme===\"light\"?\"#FFFFFF\":\"#0D0B09\");}}catch(e){}`,
+          }}
+        />
+        <Script
+          id="scroll-restoration"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `history.scrollRestoration="manual";if(!location.hash)window.scrollTo(0,0);`,
+          }}
+        />
+      </head>
       <body suppressHydrationWarning>
-        <Script id="scroll-restoration" strategy="beforeInteractive">
-          {`history.scrollRestoration = "manual";
-if (!location.hash) window.scrollTo(0, 0);`}
-        </Script>
         {/* Film-grain noise overlay — fixed, pointer-events-none, adds physical texture */}
         <div className="grain-overlay" aria-hidden="true" />
         {/* Person structured data for name-search rich results */}

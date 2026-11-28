@@ -22,6 +22,7 @@ import ScrollVelocitySkew from "../components/ScrollVelocitySkew";
 import SpatialSection from "../components/SpatialSection";
 import StackTransitions from "../components/StackTransitions";
 import StickyDeckSection from "../components/StickyDeckSection";
+import TechStack3D from "../components/TechStack3D";
 import { HoverScrambleText } from "../components/ui/HoverScrambleText";
 import { BUILDING } from "../lib/data";
 import { burnControls } from "../lib/burnControls";
@@ -48,33 +49,6 @@ const NAV_ITEMS = [
   { id: "skills", label: "Skills" },
   { id: "about", label: "About" },
   { id: "contact", label: "Contact" },
-] as const;
-
-const SKILL_PILLS = [
-  "Artificial Intelligence",
-  "Generative AI",
-  "AI Integration",
-  "AI-powered Applications",
-  "MongoDB",
-  "Express.js",
-  "React.js",
-  "Node.js",
-  "JavaScript",
-  "REST APIs",
-  "HTML5",
-  "CSS3",
-  "Tailwind CSS",
-  "Bootstrap",
-  "Responsive Web Design",
-  "PHP",
-  "MySQL",
-  "REST API Integration",
-  "WordPress",
-  "WooCommerce",
-  "Elementor",
-  "Data Analytics",
-  "Git",
-  "GitHub",
 ] as const;
 
 const CHAPTER_TARGETS = [
@@ -115,15 +89,14 @@ const FAILURE_CLEAR_TARGETS = [
   ".hero-buttons",
 ].join(",");
 
-const GravityPit = dynamic(() => import("../components/GravityPit"), {
-  ssr: false,
-});
 const PreLoader = dynamic(() => import("../components/PreLoader"), {
   ssr: false,
 });
 
 export default function Home() {
-  const [environment, setEnvironment] = useState<MotionEnvironment | null>(null);
+  const [environment, setEnvironment] = useState<MotionEnvironment | null>(() =>
+    typeof window !== "undefined" ? resolveMotionEnvironment() : null,
+  );
   const [preloaderDone, setPreloaderDone] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeId, setActiveId] = useState("");
@@ -138,6 +111,21 @@ export default function Home() {
     environment?.coarsePointer === true &&
     !environment.reducedMotion &&
     environment.webglAvailable;
+
+  const toggleTheme = useCallback(() => {
+    const root = document.documentElement;
+    const nextTheme = root.dataset.theme === "light" ? "dark" : "light";
+    root.dataset.theme = nextTheme;
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", nextTheme === "light" ? "#FFFFFF" : "#0D0B09");
+
+    try {
+      window.localStorage.setItem("portfolio-theme", nextTheme);
+    } catch (error) {
+      console.warn("Could not save the color theme preference.", error);
+    }
+  }, []);
 
   const failOpen = useCallback(() => {
     if (motionFailedRef.current) return;
@@ -164,6 +152,22 @@ export default function Home() {
   useEffect(() => {
     const root = document.documentElement;
     root.dataset.motionReady = "false";
+
+    // Restore saved theme after hydration — the beforeInteractive Script in
+    // layout.tsx handles FOUC prevention, but React 19 hydration may strip the
+    // attribute before client JS runs.  This effect is the authoritative
+    // post-hydration guarantee.
+    try {
+      const saved = localStorage.getItem("portfolio-theme");
+      if (saved === "light" || saved === "dark") {
+        root.dataset.theme = saved;
+        document
+          .querySelector('meta[name="theme-color"]')
+          ?.setAttribute("content", saved === "light" ? "#FFFFFF" : "#0D0B09");
+      }
+    } catch {
+      // localStorage unavailable — keep the default dark theme.
+    }
 
     const onMotionFailure = () => failOpen();
     window.addEventListener(MOTION_FAILED_EVENT, onMotionFailure);
@@ -260,12 +264,12 @@ export default function Home() {
   useEffect(() => {
     if (!environment || !preloaderDone || motionFailedRef.current) return;
 
+    document.documentElement.dataset.motionReady = "true";
     let firstFrame = 0;
 
     try {
       firstFrame = requestAnimationFrame(() => {
         if (motionFailedRef.current) return;
-        document.documentElement.dataset.motionReady = "true";
         /* Force the named runway styles to resolve before either Lenis or
            ScrollTrigger snapshots the new document height. */
         void document.documentElement.scrollHeight;
@@ -490,7 +494,7 @@ export default function Home() {
       <div
         id="preloader-mask"
         aria-hidden="true"
-        style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#0D0B09" }}
+        style={{ position: "fixed", inset: 0, zIndex: 9999, background: "var(--surface-0)", pointerEvents: "none" }}
       />
       <PreLoader onComplete={() => setPreloaderDone(true)} />
       <a className="skip-link" href="#main-content">
@@ -531,6 +535,27 @@ export default function Home() {
               </li>
             ))}
           </ul>
+
+          <button
+            className="theme-toggle"
+            id="theme-toggle"
+            type="button"
+            aria-label="Toggle color theme"
+            title="Toggle light and dark mode"
+            onClick={toggleTheme}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <g className="theme-toggle__sun">
+                <circle cx="12" cy="12" r="3.5" />
+                <path d="M12 2.5v2M12 19.5v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2.5 12h2m15 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" />
+              </g>
+              <path
+                className="theme-toggle__moon"
+                d="M20.2 15.1A8.3 8.3 0 0 1 8.9 3.8 8.4 8.4 0 1 0 20.2 15.1Z"
+              />
+            </svg>
+            <span className="sr-only">Toggle light and dark color themes</span>
+          </button>
 
           <a
             href="mailto:talhaamir.sh@gmail.com"
@@ -626,7 +651,7 @@ export default function Home() {
               <header
                 className="ed-header"
                 data-chapter-heading
-                style={{ marginBottom: "56px" }}
+                style={{ marginBottom: "20px" }}
               >
                 <div className="ed-header-row sp-reveal">
                   <span className="ed-eyebrow">02 / In Progress</span>
@@ -656,11 +681,11 @@ export default function Home() {
               <header
                 className="ed-header"
                 data-chapter-heading
-                style={{ marginBottom: "20px" }}
+                style={{ marginBottom: "12px" }}
               >
                 <div className="ed-header-row sp-reveal">
                   <span className="ed-eyebrow">03 / Skills</span>
-                  <span className="ed-meta mono">drag to interact</span>
+                  <span className="ed-meta mono">3D interactive stack</span>
                 </div>
                 <h2 className="ed-heading ed-heading--md sp-reveal">
                   The <em>stack</em>
@@ -671,7 +696,7 @@ export default function Home() {
                 className="sp-reveal"
                 style={{
                   color: "var(--ink-2)",
-                  marginBottom: "20px",
+                  marginBottom: "14px",
                   fontFamily: "var(--font-jakarta)",
                   fontSize: "15px",
                   letterSpacing: "-0.01em",
@@ -682,11 +707,7 @@ export default function Home() {
               </p>
 
               <div className="sp-reveal" data-chapter-body>
-                {environment === null ? null : (
-                  <InViewMount minHeight={420}>
-                    <GravityPit pills={SKILL_PILLS} />
-                  </InViewMount>
-                )}
+                <TechStack3D />
               </div>
             </div>
           </SpatialSection>

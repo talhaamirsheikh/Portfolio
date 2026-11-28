@@ -27,7 +27,7 @@ export default function PipelineGrid({ items }: { items: readonly BuildingItem[]
       <svg className="pipeline-grid-bg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
           <pattern id="pipeline-dot-grid" width="32" height="32" patternUnits="userSpaceOnUse">
-            <circle cx="0.5" cy="0.5" r="0.5" fill="rgba(240,232,210,0.04)" />
+            <circle cx="0.5" cy="0.5" r="0.5" fill="var(--pipeline-grid-dot)" />
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#pipeline-dot-grid)" />
@@ -52,9 +52,9 @@ export default function PipelineGrid({ items }: { items: readonly BuildingItem[]
             bridgePosition={0.38}
             bridgeCurveRadius={10}
             duration={12}
-            dotColor="rgba(143, 168, 196, 0.95)"
+            dotColor="var(--motion-border-dot)"
             dotSize={5}
-            trackColor="rgba(143, 168, 196, 0.14)"
+            trackColor="var(--motion-border-track)"
             trackWidth={1}
           />
         )}

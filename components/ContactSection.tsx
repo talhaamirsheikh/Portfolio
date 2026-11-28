@@ -280,7 +280,7 @@ export default function ContactSection({ animate = true }: ContactSectionProps) 
           bottom: "-2px",
           display: "none",
           borderBottom: "1px solid var(--border-subtle)",
-          boxShadow: "0 20px 50px rgba(13, 11, 9, 0.5)",
+          boxShadow: "var(--contact-mask-shadow)",
         }}
       />
     </section>

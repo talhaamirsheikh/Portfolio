@@ -350,14 +350,11 @@ export default function StackTransitions() {
             },
           });
         } else if (veil) {
-          /* Depth drift: as a sheet is buried it darkens through the warm
-             obsidian ramp (surface-1 #161310 toward the deeper surface-0
-             #0D0B09), reading as physical depth/distance. Data-only; rides
-             the same scrub. */
+          /* Fade the theme-aware surface veil over the outgoing sheet. */
           tl.fromTo(
             veil,
-            { backgroundColor: "#161310", opacity: 0 },
-            { backgroundColor: "#0D0B09", opacity: cfg.veil, ease: "none" },
+            { opacity: 0 },
+            { opacity: cfg.veil, ease: "none" },
             0
           );
         }

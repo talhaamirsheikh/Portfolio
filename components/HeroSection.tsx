@@ -122,8 +122,8 @@ export default function HeroSection({
       const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
       const cur = allChars.map(() => ({ x: 0, y: 0 }));
       const tgt = allChars.map(() => ({ x: 0, y: 0 }));
-      const radius = 200;
-      const maxPush = 56;
+      const radius = 150;
+      const maxPush = 28;
       let isActive = false;
 
       /* Cached untransformed char centers (viewport space) — measured
@@ -185,8 +185,8 @@ export default function HeroSection({
 
       const tickFn = () => {
         allChars.forEach((_, i) => {
-          cur[i].x = lerp(cur[i].x, tgt[i].x, 0.075);
-          cur[i].y = lerp(cur[i].y, tgt[i].y, 0.075);
+          cur[i].x = lerp(cur[i].x, tgt[i].x, 0.16);
+          cur[i].y = lerp(cur[i].y, tgt[i].y, 0.16);
           setters[i].x(cur[i].x);
           setters[i].y(cur[i].y);
         });
@@ -269,7 +269,7 @@ export default function HeroSection({
       gsap.set(".name-part-2", { yPercent: -100 });
       gsap.set(
         [".hero-tagline", ".hero-sub", ".hero-buttons"],
-        { opacity: 0, y: -80 }
+        { opacity: 0, y: -22 }
       );
     } catch {
       gsap.set([".name-part-1", ".name-part-2"], { yPercent: 0 });
@@ -302,13 +302,13 @@ export default function HeroSection({
            repulsion and the scroll-out fly-apart are never clipped. */
         gsap.to(".name-part-1", {
           yPercent: 0,
-          ease: "power3.out",
-          duration: 1.35,
+          ease: "power4.out",
+          duration: 0.68,
         });
         gsap.to(".name-part-2", {
           yPercent: 0,
-          ease: "power3.out",
-          duration: 1.35,
+          ease: "power4.out",
+          duration: 0.68,
           onComplete: () => {
             gsap.set(".hero-name-mask", { overflow: "visible" });
           },
@@ -318,10 +318,10 @@ export default function HeroSection({
         gsap.to([".hero-tagline", ".hero-sub", ".hero-buttons"], {
           y: 0,
           opacity: 1,
-          ease: "power3.out",
-          duration: 1.1,
-          stagger: 0.08,
-          delay: 0.25,
+          ease: "power4.out",
+          duration: 0.58,
+          stagger: 0.04,
+          delay: 0.06,
         });
       });
 
@@ -463,7 +463,7 @@ export default function HeroSection({
   });
 
   return (
-    <div ref={runwayRef} className={`hero-runway${motionEnabled ? "" : " hero-runway--static"}`} id="hero">
+    <div ref={runwayRef} className="hero-runway hero-runway--static" id="hero">
       {/*
         The full-screen Canvas sits here as an absolute background layer.
         It covers the entire hero sticky area so shards can fly across
@@ -543,11 +543,11 @@ export default function HeroSection({
 
               <div ref={subContentRef} className="hero-sub-content">
                 <h2 className="hero-tagline">
-                  <TerminalHighlight delay={1.1} color="#C9A852" animate={animate}>AI Engineer</TerminalHighlight> &amp; <TerminalHighlight delay={1.35} color="#C9A852" animate={animate}>MERN Stack Developer</TerminalHighlight>, building <TerminalHighlight delay={1.6} color="#8FA8C4" animate={animate}>intelligent, scalable software solutions</TerminalHighlight> with modern web technologies.
+                  <TerminalHighlight delay={0.38} color="var(--accent)" animate={animate}>AI Engineer</TerminalHighlight> &amp; <TerminalHighlight delay={0.5} color="var(--accent)" animate={animate}>MERN Stack Developer</TerminalHighlight>, building <TerminalHighlight delay={0.62} color="var(--accent-cool)" animate={animate}>intelligent, scalable software solutions</TerminalHighlight> with modern web technologies.
                 </h2>
 
                 <p className="hero-sub">
-                  I&apos;m an aspiring AI Engineer and MERN Stack Developer with 2 years of MERN experience and 4 years of WordPress development experience. <CircuitUnderline delay={1.85} color="#C9A852" animate={animate}>Open to Work — Available for New Opportunities</CircuitUnderline>.
+                  I&apos;m an aspiring AI Engineer and MERN Stack Developer with 2 years of MERN experience and 4 years of WordPress development experience. <CircuitUnderline delay={0.72} color="var(--accent)" animate={animate}>Open to Work</CircuitUnderline> &mdash; Available for New Opportunities.
                 </p>
 
                 <div className="hero-buttons">

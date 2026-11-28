@@ -50,7 +50,7 @@ import { resolveMotionEnvironment } from "../lib/motionEnvironment";
 
 /* ── Timing constants ── */
 const FLOOR_MS = 1800;      // minimum display time — prevents fast-connection flash
-const FAILSAFE_MS = 9000;   // hard ceiling — forces exit if assets stall/404/never register
+const FAILSAFE_MS = 3200;   // hard ceiling — forces exit if assets stall/404/never register
 const PRINT_INTERVAL_MS = 90; // terminal print cadence (legible even on gigabit)
 const BURN_DURATION_S = 1.5;
 const HERO_HANDOFF_AT = 0.4; // fire onComplete at 40% of the burn (curtain-midpoint parity)
@@ -84,7 +84,7 @@ const TERMINAL_TEXT_STYLE: React.CSSProperties = {
   lineHeight: 1.5,
   letterSpacing: "0.04em",
   textTransform: "uppercase",
-  color: "rgba(226, 226, 226, 0.7)",
+  color: "var(--preloader-text)",
   whiteSpace: "nowrap",
 };
 
@@ -420,7 +420,12 @@ export default function PreLoader({ onComplete }: PreLoaderProps) {
         nothing-ever-registered case (degraded mode per the header
         comment) — there the failsafe ceiling is the only exit. ── */
   const { progress, loaded } = useProgress();
-  const assetsDone = progress >= 100 && loaded > 0;
+  const assetsDone =
+    (progress >= 100 && loaded > 0) ||
+    /* Cached / headless path: stageReady landed but no asset ever registered
+       with THREE.DefaultLoadingManager (assets pre-cached or Playwright
+       headless). Without this, desktop path waits the full 9-second failsafe. */
+    (loaderSnapshot.stageReady && loaded === 0 && !loaderSnapshot.failed);
 
   useEffect(() => {
     assetsDoneRef.current = assetsDone;
@@ -572,6 +577,7 @@ export default function PreLoader({ onComplete }: PreLoaderProps) {
       onComplete: () => {
         loaderControls.setBurnProgress(1);
         loaderControls.setActive(false);
+        onCompleteRef.current();
         setIsComplete(true);
       },
     });
@@ -600,7 +606,10 @@ export default function PreLoader({ onComplete }: PreLoaderProps) {
   useEffect(() => {
     if (staticFallback || isComplete) return;
     const floor = setTimeout(() => setFloorPassed(true), FLOOR_MS);
-    const ceiling = setTimeout(() => startBurn(), FAILSAFE_MS);
+    const ceiling = setTimeout(() => {
+      startBurn();
+      setTimeout(() => onCompleteRef.current(), 700);
+    }, FAILSAFE_MS);
     return () => {
       clearTimeout(floor);
       clearTimeout(ceiling);
@@ -655,8 +664,7 @@ export default function PreLoader({ onComplete }: PreLoaderProps) {
           position: "fixed",
           inset: 0,
           zIndex: 9999,
-          background:
-            "radial-gradient(circle at 18% 82%, rgba(201,168,82,.12), transparent 42%), radial-gradient(circle at 72% 18%, rgba(143,168,196,.07), transparent 38%), #0D0B09",
+          background: "var(--preloader-bg)",
           pointerEvents: "none",
           overflow: "hidden",
         }}

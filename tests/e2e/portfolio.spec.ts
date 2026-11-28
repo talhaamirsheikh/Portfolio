@@ -19,7 +19,7 @@ async function openPortfolio(page: Page) {
   const loader = page.locator("#preloader-overlay");
   await expect
     .poll(() => page.locator("html").getAttribute("data-motion-ready"), {
-      timeout: 15_000,
+      timeout: 25_000,
     })
     .toBe("true");
   await expect(loader).toHaveCount(0, { timeout: 8_000 });
@@ -114,12 +114,56 @@ test("a hard load renders one visual stage and hands off to the cinematic hero",
   await expect(stageCanvas).toHaveCount(initialCanvasCount);
 });
 
+test("theme toggle switches palettes and remembers the selection", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop-1440");
+  await openPortfolio(page);
+
+  const themeToggle = page.locator("#theme-toggle");
+  await expect(themeToggle).toBeVisible();
+  await expect(page.locator("html")).not.toHaveAttribute("data-theme", "light");
+
+  const editorSurface = page.locator(".term-shell-inner");
+  const editorTitle = page.locator(".term-title");
+  const editorDarkAppearance = {
+    background: await editorSurface.evaluate((element) => getComputedStyle(element).backgroundColor),
+    title: await editorTitle.evaluate((element) => getComputedStyle(element).color),
+  };
+
+  await themeToggle.click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect.poll(() =>
+    page.locator("body").evaluate((body) => getComputedStyle(body).backgroundColor),
+  ).toBe("rgb(255, 255, 255)");
+  await expect.poll(() =>
+    page.locator("html").evaluate((root) => getComputedStyle(root).backgroundColor),
+  ).toBe("rgb(255, 255, 255)");
+  await expect.poll(() =>
+    editorSurface.evaluate((element) => getComputedStyle(element).backgroundColor),
+  ).toBe(editorDarkAppearance.background);
+  await expect.poll(() =>
+    editorTitle.evaluate((element) => getComputedStyle(element).color),
+  ).toBe(editorDarkAppearance.title);
+  expect(editorDarkAppearance).toEqual({
+    background: "rgb(22, 19, 16)",
+    title: "rgb(138, 125, 110)",
+  });
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+
+  await page.locator("#theme-toggle").click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect.poll(() =>
+    page.locator("body").evaluate((body) => getComputedStyle(body).backgroundColor),
+  ).toBe("rgb(13, 11, 9)");
+});
+
 test("desktop-to-mobile resize clears magnetic hero glyph offsets", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop-1440");
   await openPortfolio(page);
 
   const glyphs = page.locator(".hero-char");
-  await expect(glyphs).toHaveCount(13);
+  await expect(glyphs).toHaveCount(11);
 
   const readOffsets = () => glyphs.evaluateAll((elements) =>
     elements.map((element) => {

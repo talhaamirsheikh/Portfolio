@@ -196,8 +196,9 @@ function LaptopModel({
       materials.Image.needsUpdate      = true;
     }
     if (materials.Screen) {
-      materials.Screen.roughness = 0.35;
-      materials.Screen.metalness = 0.1;
+      materials.Screen.roughness = 0.16;
+      materials.Screen.metalness = 0.42;
+      materials.Screen.envMapIntensity = 1.25;
     }
     if (materials.Keys) {
       materials.Keys.map       = keyboardTex;
@@ -206,9 +207,10 @@ function LaptopModel({
       materials.Keys.needsUpdate = true;
     }
     if (materials.Laptop) {
-      materials.Laptop.roughness = 0.4;
-      materials.Laptop.metalness = 0.1;
-      materials.Laptop.color.set("#d1d5db");
+      materials.Laptop.roughness = 0.22;
+      materials.Laptop.metalness = 0.78;
+      materials.Laptop.envMapIntensity = 1.2;
+      materials.Laptop.color.set("#e4e2dc");
     }
     if (materials.Keyboard) {
       materials.Keyboard.roughness = 0.5;
@@ -232,23 +234,23 @@ function SmartphoneModel({ screenTexture }: { screenTexture: THREE.Texture }) {
       <RoundedBox
         args={[1.22, 2.62, 0.15]}
         radius={0.16}
-        smoothness={8}
+        smoothness={4}
         position={[0, 0, -0.9389]}
         castShadow
         receiveShadow
       >
         <meshPhysicalMaterial
-          color="#b9a98e"
-          metalness={0.82}
-          roughness={0.2}
-          clearcoat={0.9}
-          clearcoatRoughness={0.12}
+          color="#cfc6b4"
+          metalness={0.9}
+          roughness={0.16}
+          clearcoat={1}
+          clearcoatRoughness={0.08}
         />
       </RoundedBox>
       <RoundedBox
         args={[1.15, 2.51, 0.018]}
         radius={0.135}
-        smoothness={8}
+        smoothness={4}
         position={[0, 0, -0.8569]}
       >
         <meshPhysicalMaterial
@@ -471,7 +473,11 @@ function DeviceScene({
       return mobile ? Math.max(6.5, 5 / aspect) : 6.5;
     };
     const entryX = mobile ? 0 : 1.7;
-    const entryY = mobile ? -6.8 : 0;
+    /* High enough that the phone peeks under the copy at rest. The
+       settled pose stays at -0.8, and the device still parks fully
+       offscreen after the projects handoff. */
+    const entryY = mobile ? -3.45 : 0;
+    const parkedY = mobile ? -6.8 : 0;
     globalContainerRef.current.position.set(entryX, entryY, 0);
     camera.position.z = mobileFrameZ();
     lidHingeGroupRef.current.rotation.x = 1.7285;
@@ -527,7 +533,9 @@ function DeviceScene({
     );
     tl.fromTo(
       globalContainerRef.current.rotation,
-      { x: 0.18, y: -0.35, z: 0.05 },
+      mobile
+        ? { x: 0.05, y: -0.16, z: 0.02 }
+        : { x: 0.18, y: -0.35, z: 0.05 },
       {
         x: mobile ? 0 : 0.1577,
         y: 0,
@@ -790,7 +798,7 @@ function DeviceScene({
     if (mobile) {
       tl.to(
         globalContainerRef.current.position,
-        { y: entryY, duration: 0.0166, ease: "none" },
+        { y: parkedY, duration: 0.0166, ease: "none" },
         0.9834,
       );
     } else {
@@ -878,13 +886,13 @@ function DeviceScene({
     // forces the tilt to exactly 0 the instant fade hits 0 at bootProgress 0.37
     // — so the cover shot lands dead-center regardless of where the mouse was,
     // instead of a residual lerp still decaying into the framing.
-    const targetX = pointerRef.current.y * 0.10 * parallaxScale;
-    const targetY = pointerRef.current.x * 0.16 * parallaxScale;
+    const targetX = pointerRef.current.y * 0.055 * parallaxScale;
+    const targetY = pointerRef.current.x * 0.09 * parallaxScale;
     const c = parallaxCur.current;
     const dx = targetX - c.x;
     const dy = targetY - c.y;
-    c.x += dx * 0.06;
-    c.y += dy * 0.06;
+    c.x += dx * 0.14;
+    c.y += dy * 0.14;
     g.rotation.x = c.x * fade;
     g.rotation.y = c.y * fade;
     // Self-perpetuate the demand loop until the lerp has settled, so the
@@ -915,7 +923,7 @@ function DeviceScene({
     <group ref={parallaxGroupRef}>
       <group
         ref={globalContainerRef}
-        position={mobile ? [0, -4.8, 0] : [1.7, 0, 0]}
+        position={mobile ? [0, -3.45, 0] : [1.7, 0, 0]}
         rotation={[0.18, -0.35, 0.05]}
       >
         {mobile ? (
@@ -957,6 +965,65 @@ export interface InteractiveModelProps {
   renderDevice?: boolean;
   mobile?: boolean;
   onFail?: () => void;
+}
+
+function StageLights({
+  degraded,
+  environmentResolution,
+}: {
+  degraded: boolean;
+  environmentResolution: 32 | 64;
+}) {
+  const invalidate = useThree((state) => state.invalidate);
+  const [lightTheme, setLightTheme] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const sync = () => setLightTheme(root.dataset.theme === "light");
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    invalidate();
+  }, [degraded, invalidate, lightTheme]);
+
+  if (lightTheme) {
+    return (
+      <>
+        <ambientLight intensity={degraded ? 1.15 : 0.72} />
+        <hemisphereLight args={["#fffaf3", "#d9cbb6", degraded ? 0.55 : 0.85]} />
+        <directionalLight position={[6, 11, 7]} intensity={2.15} color="#fff8ef" />
+        <directionalLight position={[-7, 4, -3]} intensity={0.48} color="#8eafd0" />
+        {!degraded && (
+          <Environment resolution={environmentResolution} background={false}>
+            <Lightformer intensity={1.15} position={[3, 4, 4]} scale={[6, 5, 1]} color="#fffaf4" />
+            <Lightformer intensity={0.35} position={[-4, 2, -2]} scale={[4, 4, 1]} color="#b7c8dc" />
+            <Lightformer form="ring" intensity={0.22} position={[0, 5, 2]} scale={[3, 3, 1]} color="#ffffff" />
+          </Environment>
+        )}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <ambientLight intensity={degraded ? 1.05 : 0.42} />
+      <hemisphereLight args={["#f4ecdf", "#120e0b", 0.38]} />
+      <directionalLight position={[7, 12, 6]} intensity={2.45} color="#fff3df" />
+      <directionalLight position={[-8, 5, -5]} intensity={0.62} color="#8eabcf" />
+      <pointLight position={[2.4, 1.4, 3.4]} intensity={degraded ? 0 : 1.15} color="#e4c56a" distance={12} decay={2} />
+      {!degraded && (
+        <Environment resolution={environmentResolution} background={false}>
+          <Lightformer intensity={0.95} position={[3, 3.4, 4]} scale={[6, 5, 1]} color="#f4efe6" />
+          <Lightformer intensity={0.42} position={[-4, 2, -3]} scale={[5, 4, 1]} color="#8eabcf" />
+          <Lightformer form="ring" intensity={0.28} position={[0, 5, 2]} scale={[3, 3, 1]} color="#fff6e4" />
+        </Environment>
+      )}
+    </>
+  );
 }
 
 export default function InteractiveModel({
@@ -1093,20 +1160,10 @@ export default function InteractiveModel({
             ScrollTrigger stops firing onUpdate → no invalidate → no frames. */}
 
         {renderDevice && (
-          <>
-            <ambientLight intensity={degraded ? 2.2 : 1.5} />
-            <directionalLight position={[8, 12, 6]} intensity={2.2} />
-            <directionalLight position={[-8, 6, -6]} intensity={0.6} />
-            <pointLight position={[0, 4, 3]} intensity={1.0} />
-          </>
-        )}
-
-        {renderDevice && !degraded && (
-          <Environment resolution={quality.environmentResolution} background={false}>
-            <Lightformer intensity={0.8} position={[3, 3, 4]} scale={[6, 6, 1]} color="#eef2f4" />
-            <Lightformer intensity={0.4} position={[-4, 2, -3]} scale={[5, 5, 1]} color="#9fb4d8" />
-            <Lightformer form="ring" intensity={0.3} position={[0, 5, 2]} scale={[3, 3, 1]} color="#ffffff" />
-          </Environment>
+          <StageLights
+            degraded={degraded}
+            environmentResolution={quality.environmentResolution}
+          />
         )}
 
         {renderDevice && (

@@ -46,7 +46,7 @@
   display: inline;
   padding: 0 0.11em 0.04em;
   margin-inline: 0.035em;
-  color: var(--surface-0);
+  color: inherit;
   background-image: linear-gradient(
     var(--terminal-highlight-color, var(--accent)),
     var(--terminal-highlight-color, var(--accent))
@@ -56,6 +56,10 @@
   background-size: 100% 88%;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
+}
+
+:root .terminal-highlight[data-highlighted="true"] {
+  color: var(--accent-contrast);
 }
 
 /* Original 62508ff scale and reading composition. */
@@ -83,7 +87,7 @@
   aspect-ratio: 1.35 / 1;
   margin: 24px auto 0;
   filter: drop-shadow(0 26px 34px rgba(0, 0, 0, 0.45));
-  animation: poster-laptop-in 1s var(--ease-out-expo) both;
+  animation: poster-laptop-in 0.55s var(--ease-out-expo) both;
 }
 
 /* Lid: near-black slim bezel with a hairline aluminum rim; the screen
@@ -145,7 +149,7 @@
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.8),
     0 26px 34px rgba(0, 0, 0, 0.5);
-  animation: poster-laptop-in 1s var(--ease-out-expo) both;
+  animation: poster-laptop-in 0.55s var(--ease-out-expo) both;
 }
 
 .hero-phone-poster::before {
@@ -177,7 +181,7 @@
 @keyframes poster-laptop-in {
   from {
     opacity: 0;
-    transform: translate3d(0, 22px, 0);
+    transform: translate3d(0, 12px, 0);
   }
   to {
     opacity: 0.92;
@@ -943,19 +947,7 @@ html[data-motion-ready="failed"] .cs-slide {
   }
 
   html[data-motion-ready="true"] .sp-runway.skills-spatial {
-    /* Main-parity pit size: full 420px whenever the 100svh sticky frame can
-       fit it after the ~340px of chrome above (sticky padding + header +
-       paragraph); only short viewports (~720p) shrink it. */
-    --skills-pit-height: clamp(320px, calc(100svh - 340px), 420px);
     height: var(--runway-skills);
-  }
-
-  .skills-spatial .gravity-pit {
-    height: var(--skills-pit-height);
-  }
-
-  .skills-spatial [data-chapter-body] > div {
-    min-height: var(--skills-pit-height) !important;
   }
 
   html[data-motion-ready="true"] .about-runway {
@@ -985,7 +977,14 @@ html[data-motion-ready="failed"] .cs-slide {
     margin-top: var(--overlap-building);
   }
 
-  html[data-motion-ready="true"] .sp-sticky,
+  html[data-motion-ready="true"] .sp-sticky {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    min-height: 0;
+    overflow: visible;
+  }
+
   html[data-motion-ready="true"] .about-sticky,
   html[data-motion-ready="true"] .contact-sticky {
     position: sticky;
@@ -1125,7 +1124,8 @@ html[data-motion-ready="failed"] .cs-slide {
 
 @media (min-width: 768px) and (max-height: 720px) and (hover: hover) and (pointer: fine) {
   html[data-motion-ready="true"] .sp-sticky {
-    padding-top: calc(var(--nav-clearance) + 8px);
+    padding-top: clamp(32px, 4.5vh, 48px);
+    padding-bottom: 12px;
   }
 
   html[data-motion-ready="true"] .about-sticky {
@@ -1138,7 +1138,7 @@ html[data-motion-ready="failed"] .cs-slide {
     gap: 10px;
   }
 
-  .about-terminal-wrap {
+  :root:not([data-theme="light"]) .about-terminal-wrap {
     margin-top: clamp(30px, 8svh, 52px);
   }
 }
@@ -1424,4 +1424,222 @@ html:not([data-motion-ready]) .sticky-deck-section:not(.sticky-deck-section--mob
 html:not([data-motion-ready]) .contact-links {
   opacity: 1 !important;
   transform: none !important;
+}
+
+/* ── Hero polish ─────────────────────────────────────────────────────
+   Atmosphere, type, and controls for the first screen only. Cheap
+   gradients and solid fills — no extra blur layers over the WebGL stage. */
+
+.hero-3d-layer::before {
+  background:
+    radial-gradient(ellipse 42% 36% at 72% 58%, rgba(var(--accent-rgb), 0.16), transparent 68%),
+    radial-gradient(ellipse 34% 30% at 18% 78%, rgba(var(--accent-cool-rgb), 0.1), transparent 72%),
+    radial-gradient(ellipse 46% 16% at 68% 78%, rgba(0, 0, 0, 0.34), transparent 72%);
+}
+
+:root[data-theme="light"] .hero-3d-layer::before {
+  background:
+    radial-gradient(ellipse 48% 40% at 74% 56%, rgba(var(--accent-rgb), 0.14), transparent 70%),
+    radial-gradient(ellipse 36% 32% at 16% 74%, rgba(var(--accent-cool-rgb), 0.1), transparent 72%),
+    radial-gradient(ellipse 50% 18% at 68% 80%, rgba(48, 38, 23, 0.12), transparent 74%);
+}
+
+.hero-text-col::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -10% -8% -12% -22%;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 24% 42%,
+    rgba(var(--surface-0-rgb), 0.82) 0%,
+    rgba(var(--surface-0-rgb), 0.34) 48%,
+    transparent 74%
+  );
+}
+
+:root[data-theme="light"] .hero-text-col::before {
+  background: radial-gradient(
+    ellipse at 20% 40%,
+    rgba(255, 255, 255, 0.94) 0%,
+    rgba(255, 255, 255, 0.62) 50%,
+    transparent 76%
+  );
+}
+
+.hero-name-split {
+  letter-spacing: -0.048em;
+  line-height: 0.86;
+  margin-bottom: clamp(16px, 2.8vh, 28px);
+}
+
+.hero-char {
+  text-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-theme="light"] .hero-char {
+  text-shadow: 0 8px 18px rgba(48, 38, 23, 0.08);
+}
+
+.hero-tagline {
+  color: var(--ink-1);
+  font-weight: 500;
+  line-height: 1.42;
+  margin-bottom: 12px;
+}
+
+.hero-sub {
+  color: var(--ink-2);
+  line-height: 1.6;
+  margin-bottom: clamp(18px, 3.2vh, 32px);
+}
+
+.hero-buttons {
+  gap: 12px;
+  align-items: center;
+}
+
+.hero-buttons .btn {
+  min-height: 44px;
+  box-shadow: none;
+}
+
+.hero-buttons .btn-primary {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ink-0) 88%, #fff) 0%,
+    var(--ink-0) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 8px 18px rgba(13, 11, 9, 0.22);
+}
+
+:root[data-theme="light"] .hero-buttons .btn-primary {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 8px 16px rgba(48, 38, 23, 0.16);
+}
+
+.hero-buttons .btn-outline {
+  background: var(--surface-0);
+  border-color: rgba(var(--accent-rgb), 0.34);
+  color: var(--ink-1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+:root[data-theme="light"] .hero-buttons .btn-outline {
+  background: #fff;
+  border-color: rgba(var(--accent-rgb), 0.4);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 6px 14px rgba(48, 38, 23, 0.06);
+}
+
+:root[data-theme="light"] .hero-laptop-poster,
+:root[data-theme="light"] .hero-phone-poster {
+  filter: drop-shadow(0 18px 24px rgba(48, 38, 23, 0.16));
+}
+
+@media (max-width: 900px) {
+  .hero-3d-layer::before {
+    display: block;
+    background:
+      radial-gradient(ellipse 70% 36% at 50% 78%, rgba(var(--accent-rgb), 0.16), transparent 70%),
+      radial-gradient(ellipse 54% 22% at 50% 86%, rgba(0, 0, 0, 0.28), transparent 74%);
+  }
+
+  :root[data-theme="light"] .hero-3d-layer::before {
+    background:
+      radial-gradient(ellipse 72% 34% at 50% 78%, rgba(var(--accent-rgb), 0.12), transparent 72%),
+      radial-gradient(ellipse 56% 20% at 50% 88%, rgba(48, 38, 23, 0.1), transparent 74%);
+  }
+}
+
+@media (max-width: 767px) {
+  .hero-sticky {
+    justify-content: flex-start;
+    padding-top: calc(var(--nav-clearance) + 8px);
+  }
+
+  .hero-inner-grid {
+    gap: 0;
+  }
+
+  .hero-text-col {
+    max-width: 100%;
+  }
+
+  .hero-text-col::before {
+    inset: -6% -12% -8% -14%;
+  }
+
+  .hero-name-split {
+    font-size: clamp(42px, 12.2vw, 64px);
+    line-height: 0.88;
+    margin-bottom: 14px;
+  }
+
+  .hero-tagline {
+    font-size: clamp(15px, 4.1vw, 18px);
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+
+  .hero-sub {
+    font-size: 13.5px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+
+  .hero-buttons {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .hero-buttons .btn {
+    width: 100%;
+    max-width: none;
+    justify-content: center;
+  }
+
+  .hero-sticky::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 42px;
+    pointer-events: none;
+    background: linear-gradient(to bottom, transparent, var(--surface-0));
+  }
+}
+
+@media (max-width: 380px) {
+  .hero-name-split {
+    font-size: clamp(38px, 11.4vw, 48px);
+  }
+
+  .hero-sub {
+    font-size: 13px;
+  }
+}
+
+@media (max-height: 700px) and (max-width: 767px) {
+  .hero-name-split {
+    font-size: clamp(36px, 11vw, 52px);
+    margin-bottom: 8px;
+  }
+
+  .hero-tagline {
+    font-size: 15px;
+    margin-bottom: 6px;
+  }
+
+  .hero-sub {
+    margin-bottom: 12px;
+  }
 }

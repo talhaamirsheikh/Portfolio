@@ -140,18 +140,18 @@ export default function TerminalBlock() {
 
           {/* Output: revealed after typing finishes */}
           {showOutput && (
-            <div className="fade-in-fast">
-              <JsonOutput />
-              {/* Second prompt line at the bottom */}
-              <div className="term-line term-line--mt">
-                <span className="term-prompt-arrow">➡︎</span>
-                <span className="term-prompt-dir">~</span>
-                <span className="terminal-cursor" aria-hidden="true" />
+              <div className="fade-in-fast term-output-wrap">
+                <JsonOutput />
+                {/* Second prompt line at the bottom */}
+                <div className="term-line term-line--mt">
+                  <span className="term-prompt-arrow">➡︎</span>
+                  <span className="term-prompt-dir">~</span>
+                  <span className="terminal-cursor" aria-hidden="true" />
+                </div>
               </div>
-            </div>
           )}
-        </div>
+            </div>
       </div>
-    </div>
-  );
+      </div>
+      );
 }

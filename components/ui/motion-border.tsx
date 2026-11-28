@@ -39,10 +39,10 @@ interface MotionBorderProps {
 
 const MotionBorder: React.FC<MotionBorderProps> = ({
   borderRadius = 18,
-  dotColor = 'rgba(255,255,255,0.9)',
+  dotColor = 'var(--motion-border-dot)',
   dotSize = 5,
   duration = 12,
-  trackColor = 'rgba(255,255,255,0.06)',
+  trackColor = 'var(--motion-border-track)',
   trackWidth = 1,
   borderPadding = 2, // Tight padding to hug the cards closely
   bridgePosition = 0.38,
